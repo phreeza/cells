@@ -18,17 +18,24 @@ import math
 import random,time
 import mind1,mind2
 
+try:
+  import psyco
+  psyco.full()
+finally:
+  pass
+
 
 class Game:
   def __init__(self):
-    self.size = self.width,self.height = (500,500)
+    self.size = self.width,self.height = (100,100)
     self.messages = MessageQueue()
-    self.disp = Display(self.size,scale=1)
+    self.disp = Display(self.size,scale=5)
     self.time = 0
     self.tic = time.time()
     self.terr = ScalarMapLayer(self.size)
     self.terr.set_random(5)
     self.minds = [mind1.AgentMind,mind2.AgentMind]
+    self.update_fields = [(x,y) for x in range(self.height) for y in range(self.width)]
 
     self.energy_map = ScalarMapLayer(self.size)
     self.energy_map.set_random(10)
@@ -86,7 +93,9 @@ class Game:
 
   def run_agents(self):
     views = []
+    self.update_fields = []
     for a in self.agent_population:
+      self.update_fields.append(a.get_pos())
       agent_view = self.agent_map.get_view(a.get_pos(),1)
       plant_view = self.plant_map.get_view(a.get_pos(),1)
       world_view = WorldView(a,agent_view,plant_view,self.energy_map)
@@ -126,7 +135,7 @@ class Game:
         self.del_agent(agent)
 
   def tick(self):
-    self.disp.update(self.terr,self.agent_population,self.plant_population)
+    self.disp.update(self.terr,self.agent_population,self.plant_population,self.update_fields)
     self.disp.flip()
 
     self.run_agents() 
@@ -281,6 +290,7 @@ class Display:
   black = 0, 0, 0
   red = 255, 0, 0
   green = 0, 255, 0
+  yellow = 255,255,0
 
   def __init__(self,size,scale=5):
     self.width, self.height = size
@@ -289,11 +299,16 @@ class Display:
     pygame.init()
     self.screen = pygame.display.set_mode(self.size)
 
-  def update(self,terr,pop,plants):
+  def update(self,terr,pop,plants,upfields):
     for event in pygame.event.get():
       if event.type == pygame.QUIT: 
         sys.exit()
-    self.screen.fill(self.black)
+
+    for f in upfields:
+      (x,y)=f
+      x *= self.scale
+      y *= self.scale
+      self.screen.fill((0,10*terr.get(f),0),pygame.Rect((x,y),(self.scale,self.scale)))
     for a in pop:
       (x,y)=a.get_pos()
       x *= self.scale
@@ -303,7 +318,7 @@ class Display:
       (x,y)=a.get_pos()
       x *= self.scale
       y *= self.scale
-      self.screen.fill(self.green,pygame.Rect((x,y),(self.scale,self.scale)))
+      self.screen.fill(self.yellow,pygame.Rect((x,y),(self.scale,self.scale)))
 
   def flip(self):
     pygame.display.flip()
