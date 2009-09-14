@@ -308,7 +308,7 @@ class Display:
       (x,y)=f
       x *= self.scale
       y *= self.scale
-      self.screen.fill((0,10*terr.get(f),0),pygame.Rect((x,y),(self.scale,self.scale)))
+      self.screen.fill((0,20*terr.get(f),0),pygame.Rect((x,y),(self.scale,self.scale)))
     for a in pop:
       (x,y)=a.get_pos()
       x *= self.scale
