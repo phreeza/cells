@@ -29,7 +29,11 @@ class AgentMind:
       return cells.Action(cells.ActionType.EAT)
 
     if self.my_plant:
-      dist = max(abs(mx-self.my_plant.get_pos()[0]),abs(my-self.my_plant.get_pos()[1])) 
+      dist = max(abs(mx-self.my_plant.get_pos()[0]),abs(my-self.my_plant.get_pos()[1]))
+      if (not view.get_me().is_loaded()) and (dist < 5) and (random.random()>0.5):
+        return cells.Action(cells.ActionType.LIFT)
+      if (view.get_me().is_loaded()) and dist > 5:
+        return cells.Action(cells.ActionType.DROP)
       if view.get_me().get_energy() < dist*1.5:
         (mx,my) = self.my_plant.get_pos()
         return cells.Action(cells.ActionType.MOVE,(mx+random.randrange(-1,2),my+random.randrange(-1,2)))

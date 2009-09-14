@@ -27,15 +27,15 @@ finally:
 
 class Game:
   def __init__(self):
-    self.size = self.width,self.height = (100,100)
+    self.size = self.width,self.height = (300,300)
     self.messages = MessageQueue()
-    self.disp = Display(self.size,scale=5)
+    self.disp = Display(self.size,scale=2)
     self.time = 0
     self.tic = time.time()
     self.terr = ScalarMapLayer(self.size)
     self.terr.set_random(5)
     self.minds = [mind1.AgentMind,mind2.AgentMind]
-    self.update_fields = [(x,y) for x in range(self.height) for y in range(self.width)]
+    self.update_fields = [(x,y) for x in range(self.width) for y in range(self.height)]
 
     self.energy_map = ScalarMapLayer(self.size)
     self.energy_map.set_random(10)
@@ -100,10 +100,12 @@ class Game:
       plant_view = self.plant_map.get_view(a.get_pos(),1)
       world_view = WorldView(a,agent_view,plant_view,self.energy_map)
       views.append((a,world_view))
-      
+    
+    #get actions
     actions = [(a,a.act(v,self.messages)) for (a,v) in views]
     random.shuffle(actions)
 
+    #apply agent actions
     for (agent,action) in actions:
       agent.change_energy(-1)
       if(agent.is_alive()):
@@ -127,6 +129,14 @@ class Game:
             energy = self.agent_map.get(next_pos).get_energy() + 25
             self.energy_map.change(next_pos,energy)
             self.del_agent(self.agent_map.get(next_pos)) 
+        if (action.get_type() == ActionType.LIFT):
+          if (not agent.is_loaded()) and (self.terr.get(agent.get_pos())>0):
+            agent.set_loaded(True)
+            self.terr.change(agent.get_pos(),-1)
+        if (action.get_type() == ActionType.DROP):
+          if agent.is_loaded():
+            agent.set_loaded(False)
+            self.terr.change(agent.get_pos(),1)
 
     #let agents die if their energy is too low
     for (agent,action) in actions:
@@ -191,6 +201,7 @@ class Agent:
     self.energy = 25
     self.alive = True
     self.team = team
+    self.loaded = False
     if team == 0:
      self.color = (255,0,0)
     else:
@@ -202,6 +213,12 @@ class Agent:
 
   def set_alive(self,alive):
     self.alive = alive
+
+  def is_loaded(self):
+    return self.loaded
+
+  def set_loaded(self,l):
+    self.loaded = l
 
   def get_energy(self):
     return self.energy
@@ -232,6 +249,8 @@ class ActionType:
   MOVE = 1
   EAT = 2
   ATTACK = 3
+  LIFT = 4
+  DROP = 5
 
 class Action:
   def __init__(self,type,data=None):
@@ -308,7 +327,7 @@ class Display:
       (x,y)=f
       x *= self.scale
       y *= self.scale
-      self.screen.fill((0,20*terr.get(f),0),pygame.Rect((x,y),(self.scale,self.scale)))
+      self.screen.fill((min(255,20*terr.get(f)),min(255,10*terr.get(f)),0),pygame.Rect((x,y),(self.scale,self.scale)))
     for a in pop:
       (x,y)=a.get_pos()
       x *= self.scale
@@ -318,7 +337,7 @@ class Display:
       (x,y)=a.get_pos()
       x *= self.scale
       y *= self.scale
-      self.screen.fill(self.yellow,pygame.Rect((x,y),(self.scale,self.scale)))
+      self.screen.fill(self.green,pygame.Rect((x,y),(self.scale,self.scale)))
 
   def flip(self):
     pygame.display.flip()
