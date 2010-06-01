@@ -25,7 +25,7 @@ class AgentMind:
       elif self.my_plant.get_eff()<view.get_plants()[0].get_eff():
         self.my_plant = view.get_plants()[0]
 
-    if (((me.get_energy() < self.target_range) and (view.get_energy().get(mx, my) > 0)) 
+    if (((me.energy < self.target_range) and (view.get_energy().get(mx, my) > 0)) 
         or (view.get_energy().get(mx, my) > 100)) :
       return cells.Action(cells.ActionType.EAT)
 
@@ -35,7 +35,7 @@ class AgentMind:
         return cells.Action(cells.ActionType.LIFT)
       if me.loaded and dist > 5:
         return cells.Action(cells.ActionType.DROP)
-      if view.get_me().get_energy() < dist*1.5:
+      if view.get_me().energy < dist*1.5:
         (mx,my) = self.my_plant.get_pos()
         return cells.Action(cells.ActionType.MOVE,(mx+random.randrange(-1,2),my+random.randrange(-1,2)))
 

@@ -33,7 +33,7 @@ class AgentMind:
     if self.mode == 5:
       dist = max(abs(mx-self.target[0]),abs(my-self.target[1]))
       self.target_range = max(dist,self.target_range)
-      if view.get_me().get_energy() > dist*1.5:
+      if me.energy > dist*1.5:
         self.mode = 6 
 
     if self.mode == 6:
@@ -44,12 +44,12 @@ class AgentMind:
         self.my_plant = None
         self.mode = 0
 
-    if (view.get_me().get_energy() < self.target_range) and (view.get_energy().get(mx, my) > 0):
+    if (me.energy < self.target_range) and (view.get_energy().get(mx, my) > 0):
       return cells.Action(cells.ActionType.EAT)
 
     if self.my_plant:
       dist = max(abs(mx-self.my_plant.get_pos()[0]),abs(my-self.my_plant.get_pos()[1])) 
-      if view.get_me().get_energy() < dist*1.5:
+      if me.energy < dist*1.5:
         (mx,my) = self.my_plant.get_pos()
         return cells.Action(cells.ActionType.MOVE,(mx+random.randrange(-1,2),my+random.randrange(-1,2)))
       if (random.random()>0.9999):

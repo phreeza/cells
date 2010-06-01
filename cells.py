@@ -111,7 +111,7 @@ class Game:
 
     #apply agent actions
     for (agent,action) in actions:
-      agent.change_energy(-1)
+      agent.energy -= 1
       if agent.alive:
         if (action.get_type() == ActionType.MOVE):
           act_x, act_y = action.get_data()
@@ -121,19 +121,19 @@ class Game:
         elif (action.get_type() == ActionType.SPAWN):
           act_x, act_y = action.get_data()
           (new_x, new_y) = self.get_next_move(agent.x, agent.y, act_x, act_y)
-          if self.agent_map.in_range(new_x, new_y) and (not self.agent_map.get(new_x, new_y)) and (agent.get_energy()>=50):
+          if self.agent_map.in_range(new_x, new_y) and (not self.agent_map.get(new_x, new_y)) and agent.energy >= 50:
             a = Agent(new_x, new_y, agent.get_team(),self.minds[agent.get_team()])
             self.add_agent(a)
-            agent.change_energy(-50)
+            agent.energy -= 50
         elif (action.get_type() == ActionType.EAT):
           intake = self.energy_map.get(agent.x, agent.y)
-          agent.change_energy(intake)
+          agent.energy += intake
           self.energy_map.change(agent.x, agent.y, -intake)
         elif (action.get_type() == ActionType.ATTACK):
           act_x, act_y = act_data = action.get_data()
           (new_x, new_y) = next_pos = self.get_next_move(agent.x, agent.y, act_x, act_y)
           if self.agent_map.get(act_x, act_y) and (next_pos == act_data):
-            energy = self.agent_map.get(new_x, new_y).get_energy() + 25
+            energy = self.agent_map.get(new_x, new_y).energy + 25
             self.energy_map.change(new_x, new_y, energy)
             self.del_agent(self.agent_map.get(new_x, new_y))
         elif (action.get_type() == ActionType.LIFT):
@@ -147,7 +147,7 @@ class Game:
 
     #let agents die if their energy is too low
     for (agent,action) in actions:
-      if agent.get_energy() < 0 and agent.alive:
+      if agent.energy < 0 and agent.alive:
         self.energy_map.change(agent.x, agent.y, 25)
         self.del_agent(agent)
 
@@ -221,14 +221,8 @@ class Agent:
      self.color = (0,0,255)
     self.act = self.mind.act
 
-  def get_energy(self):
-    return self.energy
-
   def get_team(self):
     return self.team
-
-  def change_energy(self,n):
-    self.energy += n
 
   def get_pos(self):
     return (self.x, self.y)
