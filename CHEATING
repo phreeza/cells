@@ -1,0 +1,11 @@
+Some proposed ground rules:
+
+- No module-level or other shared state in "mind" modules. Agent state
+  must be visible to only a single AgentMind object.
+
+- The act method may only access game state passed to it in its
+  arguments. This current includes a WorldView and a MessageQueue.
+
+- Only interact with a MessageQueue through its send_message and
+  get_messages methods. Do not call update and do not attempt to
+  interact with its internal state.
