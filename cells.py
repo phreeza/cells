@@ -16,13 +16,22 @@ import sys
 import pygame
 import math
 import random,time
-import mind1,mind2
+
+mind1 = __import__(sys.argv[1])
+mind2 = __import__(sys.argv[2])
 
 try:
   import psyco
   psyco.full()
 except ImportError:
   pass
+
+def signum(x):
+  if x > 0:
+    return 1
+  if x < 0:
+    return -1
+  return 0
 
 
 class Game:
@@ -87,13 +96,9 @@ class Game:
     a.y = y
 
   def get_next_move(self,old_x, old_y, x, y):
-    dx = int(math.copysign(1,x-old_x))
-    if old_x == x:
-      dx = 0
-    dy = int(math.copysign(1,y-old_y))
-    if old_y == y:
-      dy = 0
-    return (old_x+dx, old_y+dy)
+    dx = signum(x - old_x)
+    dy = signum(y - old_y)
+    return (old_x + dx, old_y + dy)
 
   def run_agents(self):
     views = []
