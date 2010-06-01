@@ -20,6 +20,8 @@ import random,time
 mind1 = __import__(sys.argv[1])
 mind2 = __import__(sys.argv[2])
 
+terrain_bounds = 280
+
 try:
   import psyco
   psyco.full()
@@ -36,7 +38,7 @@ def signum(x):
 
 class Game:
   def __init__(self):
-    self.size = self.width,self.height = (300,300)
+    self.size = self.width,self.height = (terrain_bounds,terrain_bounds)
     self.messages = MessageQueue()
     self.disp = Display(self.size,scale=2)
     self.time = 0
