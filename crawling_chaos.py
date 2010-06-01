@@ -2,7 +2,7 @@ import random,cells
 
 import cmath, math
 class AgentMind:
-  def __init__(self):
+  def __init__(self, junk):
     self.my_plant = None
     self.mode = 1
     self.target_range = random.randrange(50,200)

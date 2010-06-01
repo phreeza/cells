@@ -69,7 +69,7 @@ class Game:
       (mx,my) = self.plant_population[idx].get_pos() 
       fuzzed_x = mx + random.randrange(-1,2)
       fuzzed_y = my + random.randrange(-1,2)
-      self.agent_population.append(Agent(fuzzed_x, fuzzed_y, idx, self.minds[idx]))
+      self.agent_population.append(Agent(fuzzed_x, fuzzed_y, idx, self.minds[idx], None))
       self.agent_map.insert(self.agent_population)
 
   def run_plants(self):
@@ -124,10 +124,10 @@ class Game:
           if self.agent_map.in_range(new_x, new_y) and not self.agent_map.get(new_x, new_y):
             self.move_agent(agent, new_x, new_y)
         elif (action.get_type() == ActionType.SPAWN):
-          act_x, act_y = action.get_data()
+          act_x, act_y = action.get_data()[:2]
           (new_x, new_y) = self.get_next_move(agent.x, agent.y, act_x, act_y)
           if self.agent_map.in_range(new_x, new_y) and (not self.agent_map.get(new_x, new_y)) and agent.energy >= 50:
-            a = Agent(new_x, new_y, agent.get_team(),self.minds[agent.get_team()])
+            a = Agent(new_x, new_y, agent.get_team(),self.minds[agent.get_team()], action.get_data()[2:])
             self.add_agent(a)
             agent.energy -= 50
         elif (action.get_type() == ActionType.EAT):
@@ -212,10 +212,10 @@ class ObjectMapLayer(MapLayer):
       self.set(o.x, o.y, o)
 
 class Agent:
-  def __init__(self, x, y, team,AgentMind):
+  def __init__(self, x, y, team, AgentMind, cargs):
     self.x = x
     self.y = y
-    self.mind = AgentMind()
+    self.mind = AgentMind(cargs)
     self.energy = 25
     self.alive = True
     self.team = team
@@ -362,18 +362,18 @@ class Plant:
 
 class MessageQueue:
   def __init__(self):
-    self.inlist = []
-    self.outlist = []
+    self.__inlist = []
+    self.__outlist = []
 
   def update(self):
-    self.outlist = self.inlist
-    self.inlist = []
+    self.__outlist = self.__inlist
+    self.__inlist = []
   
   def send_message(self,m):
-    self.inlist.append(m)
+    self.__inlist.append(m)
 
   def get_messages(self):
-    return self.outlist
+    return self.__outlist
 
 class Message:
   def __init__(self,message):
