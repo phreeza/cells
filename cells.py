@@ -21,7 +21,7 @@ import mind1,mind2
 try:
   import psyco
   psyco.full()
-finally:
+except ImportError:
   pass
 
 
