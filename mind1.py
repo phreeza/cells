@@ -25,15 +25,15 @@ class AgentMind:
       elif self.my_plant.get_eff()<view.get_plants()[0].get_eff():
         self.my_plant = view.get_plants()[0]
 
-    if (((view.get_me().get_energy() < self.target_range) and (view.get_energy().get(mx, my) > 0)) 
+    if (((me.get_energy() < self.target_range) and (view.get_energy().get(mx, my) > 0)) 
         or (view.get_energy().get(mx, my) > 100)) :
       return cells.Action(cells.ActionType.EAT)
 
     if self.my_plant:
       dist = max(abs(mx-self.my_plant.get_pos()[0]),abs(my-self.my_plant.get_pos()[1]))
-      if (not view.get_me().is_loaded()) and (dist < 5) and (random.random()>0.5):
+      if not me.loaded and dist < 5 and random.random() > 0.5:
         return cells.Action(cells.ActionType.LIFT)
-      if (view.get_me().is_loaded()) and dist > 5:
+      if me.loaded and dist > 5:
         return cells.Action(cells.ActionType.DROP)
       if view.get_me().get_energy() < dist*1.5:
         (mx,my) = self.my_plant.get_pos()

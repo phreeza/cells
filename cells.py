@@ -78,7 +78,7 @@ class Game:
   def del_agent(self,a):
     self.agent_population.remove(a)
     self.agent_map.set(a.x, a.y, None)
-    a.set_alive(False)
+    a.alive = False
   
   def move_agent(self, a, x, y):
     self.agent_map.set(a.x, a.y, None)
@@ -112,7 +112,7 @@ class Game:
     #apply agent actions
     for (agent,action) in actions:
       agent.change_energy(-1)
-      if (agent.is_alive()):
+      if agent.alive:
         if (action.get_type() == ActionType.MOVE):
           act_x, act_y = action.get_data()
           (new_x, new_y) = self.get_next_move(agent.x, agent.y, act_x, act_y)
@@ -137,17 +137,17 @@ class Game:
             self.energy_map.change(new_x, new_y, energy)
             self.del_agent(self.agent_map.get(new_x, new_y))
         elif (action.get_type() == ActionType.LIFT):
-          if (not agent.is_loaded()) and (self.terr.get(agent.x, agent.y)>0):
-            agent.set_loaded(True)
+          if not agent.loaded and self.terr.get(agent.x, agent.y) > 0:
+            agent.loaded = True
             self.terr.change(agent.x, agent.y, -1)
         elif (action.get_type() == ActionType.DROP):
-          if agent.is_loaded():
-            agent.set_loaded(False)
+          if agent.loaded:
+            agent.loaded = False
             self.terr.change(agent.x, agent.y, 1)
 
     #let agents die if their energy is too low
     for (agent,action) in actions:
-      if agent.get_energy() < 0 and agent.is_alive():
+      if agent.get_energy() < 0 and agent.alive:
         self.energy_map.change(agent.x, agent.y, 25)
         self.del_agent(agent)
 
@@ -220,18 +220,6 @@ class Agent:
     else:
      self.color = (0,0,255)
     self.act = self.mind.act
-
-  def is_alive(self):
-    return self.alive
-
-  def set_alive(self,alive):
-    self.alive = alive
-
-  def is_loaded(self):
-    return self.loaded
-
-  def set_loaded(self,l):
-    self.loaded = l
 
   def get_energy(self):
     return self.energy
