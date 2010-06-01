@@ -12,8 +12,8 @@ class AgentMind:
     y_sum = 0
     dir = 1
     n = len(view.get_plants())
-    mp = (mx,my)=view.get_me().get_pos()
     me = view.get_me()
+    mp = (mx,my)= me.get_pos()
     for a in view.get_agents():
       if (a.get_team()!=me.get_team()):
         return cells.Action(cells.ActionType.ATTACK,a.get_pos())
@@ -44,7 +44,7 @@ class AgentMind:
         self.my_plant = None
         self.mode = 0
 
-    if (view.get_me().get_energy() < self.target_range) and (view.get_energy().get(mp) > 0):
+    if (view.get_me().get_energy() < self.target_range) and (view.get_energy().get(mx, my) > 0):
       return cells.Action(cells.ActionType.EAT)
 
     if self.my_plant:
