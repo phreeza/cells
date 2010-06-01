@@ -35,7 +35,7 @@ class Game:
     self.terr = ScalarMapLayer(self.size)
     self.terr.set_random(5)
     self.minds = [mind1.AgentMind,mind2.AgentMind]
-    self.update_fields = [(x,y) for x in range(self.width) for y in range(self.height)]
+    self.update_fields = [(x,y) for x in xrange(self.width) for y in xrange(self.height)]
 
     self.energy_map = ScalarMapLayer(self.size)
     self.energy_map.set_random(10)
@@ -47,57 +47,61 @@ class Game:
     self.agent_population = []
 
     for x in xrange(7):
-      pos = (mx,my) = (random.randrange(self.width),random.randrange(self.height))
+      mx = random.randrange(self.width)
+      my = random.randrange(self.height)
       eff = random.randrange(5,11)
-      p = Plant(pos,eff)
+      p = Plant(mx, my, eff)
       self.plant_population.append(p)
-      p = Plant((my,mx),eff)
+      p = Plant(my, mx, eff)
       self.plant_population.append(p)
     self.plant_map.insert(self.plant_population)
     
-    for x in xrange(2):    
-      (mx,my) = self.plant_population[x].get_pos() 
-      pos = (mx+random.randrange(-1,2),my+random.randrange(-1,2))
-      self.agent_population.append(Agent(pos,x,self.minds[x]))
+    for idx in xrange(2):    
+      (mx,my) = self.plant_population[idx].get_pos() 
+      fuzzed_x = mx + random.randrange(-1,2)
+      fuzzed_y = my + random.randrange(-1,2)
+      self.agent_population.append(Agent(fuzzed_x, fuzzed_y, idx, self.minds[idx]))
       self.agent_map.insert(self.agent_population)
 
   def run_plants(self):
     for p in self.plant_population:
       (x,y) = p.get_pos()
-      for dx in [-1,0,1]:
-        for dy in [-1,0,1]:
-          if self.energy_map.in_range((x+dx,y+dy)):
-            self.energy_map.change((x+dx,y+dy),p.get_eff())
+      for dx in (-1,0,1):
+        for dy in (-1,0,1):
+          if self.energy_map.in_range(x+dx,y+dy):
+            self.energy_map.change(x+dx,y+dy,p.get_eff())
 
   def add_agent(self,a):
     self.agent_population.append(a)
-    self.agent_map.set(a.get_pos(),a)
+    self.agent_map.set(a.x, a.y, a)
   
   def del_agent(self,a):
     self.agent_population.remove(a)
-    self.agent_map.set(a.get_pos(),None)
+    self.agent_map.set(a.x, a.y, None)
     a.set_alive(False)
-    del a 
   
-  def move_agent(self,a,pos):
-    self.agent_map.set(a.get_pos(),None)
-    self.agent_map.set(pos,a)
-    a.set_pos(pos)
+  def move_agent(self, a, x, y):
+    self.agent_map.set(a.x, a.y, None)
+    self.agent_map.set(x, y, a)
+    a.x = x
+    a.y = y
 
-  def get_next_move(self,(old_x,old_y),(x,y)):
+  def get_next_move(self,old_x, old_y, x, y):
     dx = int(math.copysign(1,x-old_x))
-    if old_x == x: dx = 0
+    if old_x == x:
+      dx = 0
     dy = int(math.copysign(1,y-old_y))
-    if old_y == y: dy = 0
-    return (old_x+dx,old_y+dy)
+    if old_y == y:
+      dy = 0
+    return (old_x+dx, old_y+dy)
 
   def run_agents(self):
     views = []
     self.update_fields = []
     for a in self.agent_population:
       self.update_fields.append(a.get_pos())
-      agent_view = self.agent_map.get_view(a.get_pos(),1)
-      plant_view = self.plant_map.get_view(a.get_pos(),1)
+      agent_view = self.agent_map.get_view(a.x, a.y, 1)
+      plant_view = self.plant_map.get_view(a.x, a.y, 1)
       world_view = WorldView(a,agent_view,plant_view,self.energy_map)
       views.append((a,world_view))
     
@@ -108,40 +112,43 @@ class Game:
     #apply agent actions
     for (agent,action) in actions:
       agent.change_energy(-1)
-      if(agent.is_alive()):
+      if (agent.is_alive()):
         if (action.get_type() == ActionType.MOVE):
-          next_pos = self.get_next_move(agent.get_pos(),action.get_data())
-          if self.agent_map.in_range(next_pos) and not self.agent_map.get(next_pos):
-            self.move_agent(agent,next_pos)
+          act_x, act_y = action.get_data()
+          (new_x, new_y) = self.get_next_move(agent.x, agent.y, act_x, act_y)
+          if self.agent_map.in_range(new_x, new_y) and not self.agent_map.get(new_x, new_y):
+            self.move_agent(agent, new_x, new_y)
         elif (action.get_type() == ActionType.SPAWN):
-          next_pos = self.get_next_move(agent.get_pos(),action.get_data())
-          if self.agent_map.in_range(next_pos) and (not self.agent_map.get(next_pos)) and (agent.get_energy()>=50):
-            a = Agent(next_pos,agent.get_team(),self.minds[agent.get_team()])
+          act_x, act_y = action.get_data()
+          (new_x, new_y) = self.get_next_move(agent.x, agent.y, act_x, act_y)
+          if self.agent_map.in_range(new_x, new_y) and (not self.agent_map.get(new_x, new_y)) and (agent.get_energy()>=50):
+            a = Agent(new_x, new_y, agent.get_team(),self.minds[agent.get_team()])
             self.add_agent(a)
             agent.change_energy(-50)
         elif (action.get_type() == ActionType.EAT):
-          intake = self.energy_map.get(agent.get_pos())
+          intake = self.energy_map.get(agent.x, agent.y)
           agent.change_energy(intake)
-          self.energy_map.change(agent.get_pos(),-intake)
+          self.energy_map.change(agent.x, agent.y, -intake)
         elif (action.get_type() == ActionType.ATTACK):
-          next_pos = self.get_next_move(agent.get_pos(),action.get_data())
-          if(self.agent_map.get(action.get_data())) and (next_pos == action.get_data()):
-            energy = self.agent_map.get(next_pos).get_energy() + 25
-            self.energy_map.change(next_pos,energy)
-            self.del_agent(self.agent_map.get(next_pos)) 
+          act_x, act_y = act_data = action.get_data()
+          (new_x, new_y) = next_pos = self.get_next_move(agent.x, agent.y, act_x, act_y)
+          if self.agent_map.get(act_x, act_y) and (next_pos == act_data):
+            energy = self.agent_map.get(new_x, new_y).get_energy() + 25
+            self.energy_map.change(new_x, new_y, energy)
+            self.del_agent(self.agent_map.get(new_x, new_y))
         elif (action.get_type() == ActionType.LIFT):
-          if (not agent.is_loaded()) and (self.terr.get(agent.get_pos())>0):
+          if (not agent.is_loaded()) and (self.terr.get(agent.x, agent.y)>0):
             agent.set_loaded(True)
-            self.terr.change(agent.get_pos(),-1)
+            self.terr.change(agent.x, agent.y, -1)
         elif (action.get_type() == ActionType.DROP):
           if agent.is_loaded():
             agent.set_loaded(False)
-            self.terr.change(agent.get_pos(),1)
+            self.terr.change(agent.x, agent.y, 1)
 
     #let agents die if their energy is too low
     for (agent,action) in actions:
       if agent.get_energy() < 0 and agent.is_alive():
-        self.energy_map.change(agent.get_pos(),25)
+        self.energy_map.change(agent.x, agent.y, 25)
         self.del_agent(agent)
 
   def tick(self):
@@ -160,16 +167,18 @@ class MapLayer:
     self.size = self.width, self.height = size
     self.values = [val for x in xrange(self.width*self.height) ]
 
-  def get(self,(x,y)):
-    if self.in_range((x,y)):
-      return self.values[x+y*self.width]
-    else:
-      return None
+  def get(self,x,y):
+    if y >= 0 and x >= 0:
+      try:
+        return self.values[x+y*self.width]
+      except IndexError:
+        return None
+    return None
 
-  def set(self,(x,y),val):
+  def set(self, x, y, val):
     self.values[x+y*self.width] = val
   
-  def in_range(self,(x,y)):
+  def in_range(self, x, y):
     return (0<=x and x<self.width and 0<=y and y < self.height)
 
 
@@ -177,26 +186,30 @@ class ScalarMapLayer(MapLayer):
   def set_random(self,range):
     self.values = [random.randrange(range) for x in xrange(self.width*self.height) ]
 
-  def change(self,(x,y),val):
+  def change(self, x, y, val):
     self.values[x+y*self.width] += val
 
 class ObjectMapLayer(MapLayer):
   
-  def get_view(self,(x,y),r):
+  def get_view(self, x, y, r):
     ret = []
     for x_off in xrange(-r,r+1):
       for y_off in xrange(-r,r+1):
-        a = self.get((x+x_off,y+y_off))
-        if a and (x_off,y_off)!=(0,0): ret.append(a.get_view())
+        if x_off == 0 and y_off == 0:
+          next
+        a = self.get(x + x_off, y + y_off)
+        if a is not None:
+          ret.append(a.get_view())
     return ret
 
   def insert(self,list):
     for o in list:
-      self.set(o.get_pos(),o)
+      self.set(o.x, o.y, o)
 
 class Agent:
-  def __init__(self,pos,team,AgentMind):
-    self.pos = self.x,self.y = pos
+  def __init__(self, x, y, team,AgentMind):
+    self.x = x
+    self.y = y
     self.mind = AgentMind()
     self.energy = 25
     self.alive = True
@@ -230,10 +243,11 @@ class Agent:
     self.energy += n
 
   def get_pos(self):
-    return self.pos
+    return (self.x, self.y)
   
-  def set_pos(self,pos):
-    self.pos = pos
+  def set_pos(self, x, y):
+    self.x = x
+    self.y = y
   
   def get_team(self):
     return self.team
@@ -265,22 +279,23 @@ class Action:
 
 class PlantView:
   def __init__(self,p):
-    self.pos = p.get_pos()
+    self.x = p.x
+    self.y = p.y
     self.eff = p.get_eff()
 
   def get_pos(self):
-    return self.pos
+    return (self.x, self.y)
 
   def get_eff(self):
     return self.eff
 
 class AgentView:
   def __init__(self,agent):
-    self.pos = agent.get_pos()
+    (self.x, self.y) = agent.get_pos()
     self.team = agent.get_team()
 
   def get_pos(self):
-    return self.pos
+    return (self.x, self.y)
 
   def get_team(self):
     return self.team
@@ -325,9 +340,9 @@ class Display:
 
     for f in upfields:
       (x,y)=f
-      x *= self.scale
-      y *= self.scale
-      self.screen.fill((min(255,20*terr.get(f)),min(255,10*terr.get(f)),0),pygame.Rect((x,y),(self.scale,self.scale)))
+      scaled_x = x * self.scale
+      scaled_y = y * self.scale
+      self.screen.fill((min(255,20*terr.get(x,y)),min(255,10*terr.get(x,y)),0),pygame.Rect((scaled_x,scaled_y),(self.scale,self.scale)))
     for a in pop:
       (x,y)=a.get_pos()
       x *= self.scale
@@ -343,12 +358,13 @@ class Display:
     pygame.display.flip()
 
 class Plant:
-  def __init__(self,pos,eff):
-    self.pos = self.x,self.y = pos
+  def __init__(self, x, y, eff):
+    self.x = x
+    self.y = y
     self.eff = eff
 
   def get_pos(self):
-    return self.pos
+    return (self.x, self.y)
 
   def get_eff(self):
     return self.eff
