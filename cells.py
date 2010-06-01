@@ -113,27 +113,27 @@ class Game:
           next_pos = self.get_next_move(agent.get_pos(),action.get_data())
           if self.agent_map.in_range(next_pos) and not self.agent_map.get(next_pos):
             self.move_agent(agent,next_pos)
-        if (action.get_type() == ActionType.SPAWN):
+        elif (action.get_type() == ActionType.SPAWN):
           next_pos = self.get_next_move(agent.get_pos(),action.get_data())
           if self.agent_map.in_range(next_pos) and (not self.agent_map.get(next_pos)) and (agent.get_energy()>=50):
             a = Agent(next_pos,agent.get_team(),self.minds[agent.get_team()])
             self.add_agent(a)
             agent.change_energy(-50)
-        if (action.get_type() == ActionType.EAT):
+        elif (action.get_type() == ActionType.EAT):
           intake = self.energy_map.get(agent.get_pos())
           agent.change_energy(intake)
           self.energy_map.change(agent.get_pos(),-intake)
-        if (action.get_type() == ActionType.ATTACK):
+        elif (action.get_type() == ActionType.ATTACK):
           next_pos = self.get_next_move(agent.get_pos(),action.get_data())
           if(self.agent_map.get(action.get_data())) and (next_pos == action.get_data()):
             energy = self.agent_map.get(next_pos).get_energy() + 25
             self.energy_map.change(next_pos,energy)
             self.del_agent(self.agent_map.get(next_pos)) 
-        if (action.get_type() == ActionType.LIFT):
+        elif (action.get_type() == ActionType.LIFT):
           if (not agent.is_loaded()) and (self.terr.get(agent.get_pos())>0):
             agent.set_loaded(True)
             self.terr.change(agent.get_pos(),-1)
-        if (action.get_type() == ActionType.DROP):
+        elif (action.get_type() == ActionType.DROP):
           if agent.is_loaded():
             agent.set_loaded(False)
             self.terr.change(agent.get_pos(),1)
