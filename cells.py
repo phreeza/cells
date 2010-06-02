@@ -45,14 +45,15 @@ except:
     bounds = config.getint('terrain', 'bounds')
 
 # accept command line arguments for the minds over those in the config
-try:
-    mind1 = __import__(sys.argv[1])
+if len(sys.argv)>2:
     try:
-        mind2 = __import__(sys.argv[2])
+        mind1 = __import__(sys.argv[1])
+        try:
+            mind2 = __import__(sys.argv[2])
+        except ImportError:
+            pass
     except ImportError:
         pass
-except ImportError:
-    pass
 
 
 try:
