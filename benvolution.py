@@ -24,7 +24,7 @@ import numpy
 
 import genes
 
-CallTypeGene = genes.make_drastic_mutation_gene(0.01)
+CallTypeGene = genes.make_drastic_mutation_gene(0.25)
 
 def signum(x):
   if x > 0:
@@ -51,6 +51,8 @@ class AgentMind:
     # reproduce for at least X children at a plant before going out and attacking
     self.children = 0
     self.my_plant = None
+    self.bumps = 0
+    self.last_pos = (-1, -1)
 
     if args is None:
         self.call_type = CallTypeGene(genes.InitializerGene(0))
@@ -86,8 +88,17 @@ class AgentMind:
 
 
   def act(self, view, msg):
+      ret = self.act_wrapper(view, msg)
+      self.last_pos = view.me.get_pos()
+      return ret
+
+  def act_wrapper(self, view, msg):
     me = view.get_me()
     my_pos = (mx,my) = me.get_pos()
+    if my_pos == self.last_pos:
+        self.bumps += 1
+    else:
+        self.bumps = 0
 
     # Attack anyone next to me, but first send out the distress message with my position
     for a in view.get_agents():
@@ -111,6 +122,7 @@ class AgentMind:
         if plants :
             self.my_plant = plants[0]
             self.x = self.y = 0
+            self.call_type = self.call_type.spawn()
     if self.my_plant:
         spawn_x, spawn_y = self.smart_spawn(me, view)
         return cells.Action(cells.ACT_SPAWN, (me.x + spawn_x, me.y + spawn_y, self))
@@ -150,7 +162,13 @@ class AgentMind:
             if (self.x == 0 and self.y == 0) :
                 self.x = 1
             self.step = random.randrange(3, 10);
- 
+
+    if self.bumps >= 2:
+        self.x = random.randrange(-3,4)
+        self.y = random.randrange(-3,4)
+        self.bumps = 0
+
+
     # hit world wall
     map_size = view.energy_map.width
     if (mx == 0 or mx == map_size-1) :
