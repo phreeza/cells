@@ -1,5 +1,5 @@
 import random,cells
-
+import math
 class AgentMind:
   def __init__(self, junk):
     self.my_plant = None
@@ -7,6 +7,9 @@ class AgentMind:
     self.target_range = random.randrange(50,1000)
     pass
 
+  def length(self,a,b):
+      return int(math.sqrt((a*a)+(b*b)))
+  
   def act(self,view,msg):
     x_sum = 0
     y_sum = 0
@@ -30,12 +33,12 @@ class AgentMind:
       return cells.Action(cells.ACT_EAT)
 
     if self.my_plant:
-      dist = max(abs(mx-self.my_plant.get_pos()[0]), abs(my-self.my_plant.get_pos()[1]))
-      if not me.loaded and (dist < 5 or dist > 7) and random.random() > 0.5:
-        return cells.Action(cells.ACT_LIFT)
-      if me.loaded and dist > 5 and dist < 7:
-        return cells.Action(cells.ACT_DROP)
-      if view.get_me().energy < dist*1.5:
+      dist = self.length(abs(mx-self.my_plant.get_pos()[0]),abs(my-self.my_plant.get_pos()[1]))
+      if (not view.get_me().is_loaded()) and ((dist%5>0)or(abs(mx-self.my_plant.get_pos()[0])<2)) and (random.random()>0.5):
+        return cells.Action(cells.ActionType.LIFT)
+      if (view.get_me().is_loaded()) and ((dist%5 == 0) and (abs(mx-self.my_plant.get_pos()[0])>=2)):
+        return cells.Action(cells.ActionType.DROP)
+      if view.get_me().get_energy() < dist*1.5:
         (mx,my) = self.my_plant.get_pos()
         return cells.Action(cells.ACT_MOVE,(mx+random.randrange(-1,2),my+random.randrange(-1,2)))
 

@@ -126,10 +126,11 @@ class Game:
     a.alive = False
   
   def move_agent(self, a, x, y):
-    self.agent_map.set(a.x, a.y, None)
-    self.agent_map.set(x, y, a)
-    a.x = x
-    a.y = y
+    if (abs(self.terr.get(x,y)-self.terr.get(a.x,a.y))<=4):
+        self.agent_map.set(a.x, a.y, None)
+        self.agent_map.set(x, y, a)
+        a.x = x
+        a.y = y
 
   def get_next_move(self,old_x, old_y, x, y):
     dx = signum(x - old_x)
