@@ -16,11 +16,25 @@ import sys
 import pygame
 import math
 import random,time
+import ConfigParser
 
 mind1 = __import__(sys.argv[1])
 mind2 = __import__(sys.argv[2])
 
-terrain_bounds = 280
+config = ConfigParser.RawConfigParser()
+try:
+    config.read('default.cfg')
+    bounds = config.getint('terrain', 'bounds')
+except:
+    config.add_section('terrain')
+    config.set('terrain', 'bounds', '300')
+
+    with open('default.cfg', 'wb') as configfile:
+        config.write(configfile)
+
+    config.read('default.cfg')
+    bounds = config.getint('terrain', 'bounds')
+
 
 try:
   import psyco
@@ -38,7 +52,7 @@ def signum(x):
 
 class Game:
   def __init__(self):
-    self.size = self.width,self.height = (terrain_bounds,terrain_bounds)
+    self.size = self.width,self.height = (bounds,bounds)
     self.messages = MessageQueue()
     self.disp = Display(self.size,scale=2)
     self.time = 0
