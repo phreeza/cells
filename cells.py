@@ -30,9 +30,9 @@ def get_mind(name):
     __import__(full_name)
     return sys.modules[full_name]
 
-bounds = None  # HACK
-symmetric = None
-mind_list = None
+#bounds = None  # HACK
+#symmetric = None
+#mind_list = None
 
 def main():
     global bounds,symmetric, mind_list
@@ -81,11 +81,12 @@ def signum(x):
 
 
 class Game:
-  def __init__(self):
+  def __init__(self,bounds,mind_list,symmetric,max_time):
     self.size = self.width,self.height = (bounds,bounds)
     self.messages = [MessageQueue() for x in mind_list]
     self.disp = Display(self.size,scale=2)
     self.time = 0
+    self.max_time = max_time
     self.tic = time.time()
     self.terr = ScalarMapLayer(self.size)
     self.terr.set_random(5)
@@ -100,7 +101,7 @@ class Game:
 
     self.agent_map = ObjectMapLayer(self.size,None)
     self.agent_population = []
-    self.winner = False
+    self.winner = None
     if symmetric:
         self.n_plants = 7
     else:
@@ -222,10 +223,13 @@ class Game:
         team[agent.team] += 1
     if (team[0] == 0) :
       print "Winner is blue in: " + str(self.time)
-      self.winner = True
+      self.winner = 0
     if (team[1] == 0) :
       print "Winner is red in: " + str(self.time)
-      self.winner = True
+      self.winner = 1
+    if self.max_time > 0 and self.time>self.max_time:
+      print "It's a draw!"
+      self.winner = -1
 
   def tick(self):
     self.disp.update(self.terr,self.agent_population,self.plant_population,self.update_fields)
@@ -493,5 +497,5 @@ if __name__ == "__main__":
   main()
   while 1:
     game = Game()
-    while not game.winner:
+    while game.winner == None:
         game.tick()
