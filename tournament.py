@@ -48,9 +48,9 @@ def main():
 
 
 if __name__ == "__main__":
-  main()
-  tournament_list = [[mind_list[a],mind_list[b]] for a in range(len(mind_list)) for b in range (a)]
-  for pair in tournament_list:
-    game = Game(bounds,pair,symmetric,1000)
-    while not game.winner:
-        game.tick()
+    main()
+    tournament_list = [[mind_list[a],mind_list[b]] for a in range(len(mind_list)) for b in range (a)]
+    for pair in tournament_list:
+        game = Game(bounds,pair,symmetric,1000)
+        while not game.winner:
+            game.tick()
