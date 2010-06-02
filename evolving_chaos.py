@@ -47,11 +47,9 @@ class AgentMind:
       self.colonize_prob = parent.colonize_prob.spawn()
 
   def _colonize_from(self, mx, my, mapsize):
-    dtheta = random.random() * 2 * math.pi
-    dr = random.randrange(mapsize)
-    curr_r, curr_theta = cmath.polar(mx + my*1j)
-    t = cmath.rect(curr_r + dr, curr_theta + dtheta)
-    self._set_target(MODE_COLONIZE, t.real, t.imag, mapsize)
+    tx = random.randrange(mapsize)
+    ty = random.randrange(mapsize)
+    self._set_target(MODE_COLONIZE, tx, ty, mapsize)
 
   def _set_target(self, next_mode, tx, ty, mapsize):
     self.mode = MODE_PREP
