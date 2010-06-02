@@ -1,0 +1,9 @@
+Cells is a multi agent programing game written in Python.
+
+For more information see: http://phonons.wordpress.com/2010/06/01/cells-a-massively-multi-agent-python-programming-game/
+
+Requirements:
+pygame, psyco
+
+To run:
+python cells.py <program1> <program2> 
