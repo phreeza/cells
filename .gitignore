@@ -1,4 +1,4 @@
 *~
 *.pyc
-default.cfg
+*.cfg
 .*.swp
