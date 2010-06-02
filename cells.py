@@ -53,7 +53,7 @@ def signum(x):
 class Game:
   def __init__(self):
     self.size = self.width,self.height = (bounds,bounds)
-    self.messages = MessageQueue()
+    self.messages = [MessageQueue(), MessageQueue()]
     self.disp = Display(self.size,scale=2)
     self.time = 0
     self.tic = time.time()
@@ -127,7 +127,7 @@ class Game:
       views.append((a,world_view))
     
     #get actions
-    actions = [(a,a.act(v,self.messages)) for (a,v) in views]
+    actions = [(a,a.act(v,self.messages[a.get_team()])) for (a,v) in views]
     random.shuffle(actions)
 
     #apply agent actions
@@ -178,7 +178,8 @@ class Game:
 
     self.run_agents() 
     self.run_plants() 
-    self.messages.update()
+    for msg in self.messages:
+      msg.update()
     self.time = self.time+1
 #pygame.time.wait(int(1000*(time.time()-self.tic)))
     self.tic = time.time()
