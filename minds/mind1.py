@@ -34,11 +34,11 @@ class AgentMind:
 
     if self.my_plant:
       dist = self.length(abs(mx-self.my_plant.get_pos()[0]),abs(my-self.my_plant.get_pos()[1]))
-      if (not view.get_me().is_loaded()) and ((dist%5>0)or(abs(mx-self.my_plant.get_pos()[0])<2)) and (random.random()>0.5):
-        return cells.Action(cells.ActionType.LIFT)
-      if (view.get_me().is_loaded()) and ((dist%5 == 0) and (abs(mx-self.my_plant.get_pos()[0])>=2)):
-        return cells.Action(cells.ActionType.DROP)
-      if view.get_me().get_energy() < dist*1.5:
+      if (not view.get_me().loaded) and ((dist%5>0)or(abs(mx-self.my_plant.get_pos()[0])<2)) and (random.random()>0.5):
+        return cells.Action(cells.ACT_LIFT)
+      if (view.get_me().loaded) and ((dist%5 == 0) and (abs(mx-self.my_plant.get_pos()[0])>=2)):
+        return cells.Action(cells.ACT_DROP)
+      if view.get_me().energy < dist*1.5:
         (mx,my) = self.my_plant.get_pos()
         return cells.Action(cells.ACT_MOVE,(mx+random.randrange(-1,2),my+random.randrange(-1,2)))
 
