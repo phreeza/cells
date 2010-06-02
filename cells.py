@@ -104,8 +104,8 @@ class Game:
     self.winner = False
 
     for x in xrange(7):
-      mx = random.randrange(self.width)
-      my = random.randrange(self.height)
+      mx = random.randrange(1,self.width-1)
+      my = random.randrange(1,self.height-1)
       eff = random.randrange(5,11)
       p = Plant(mx, my, eff)
       self.plant_population.append(p)
