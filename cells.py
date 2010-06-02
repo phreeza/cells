@@ -12,11 +12,13 @@
 # - response objects for outcome of action
 # - Desynchronize agents
 
-import sys
-import pygame
-import math
-import random,time
 import ConfigParser
+import math
+import random
+import sys
+import time
+
+import pygame
 
 mind1 = __import__(sys.argv[1])
 mind2 = __import__(sys.argv[2])
