@@ -82,7 +82,7 @@ def signum(x):
 
 
 class Game:
-    def __init__(self,bounds,mind_list,symmetric,max_time):
+    def __init__(self, bounds, mind_list, symmetric, max_time):
         self.size = self.width,self.height = (bounds,bounds)
         self.messages = [MessageQueue() for x in mind_list]
         self.disp = Display(self.size,scale=2)
@@ -130,7 +130,6 @@ class Game:
 
     def run_plants(self):
         for p in self.plant_population:
-<<<<<<< HEAD
             (x, y) = p.get_pos()
             for dx in (-1, 0, 1):
                 for dy in (-1, 0, 1):
@@ -237,7 +236,7 @@ class Game:
                 self.del_agent(agent)
             else :
                 team[agent.team] += 1
-<<<<<<< HEAD
+        
         if not team[0]:
             print "Winner is blue in: " + str(self.time)
             self.winner = 0
@@ -514,6 +513,6 @@ class Message:
 if __name__ == "__main__":
     main()
     while 1:
-        game = Game()
+        game = Game(bounds,mind_list,symmetric,1000)
         while game.winner == None:
             game.tick()
