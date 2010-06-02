@@ -267,12 +267,20 @@ class ObjectMapLayer(MapLayer):
     ret = []
     get = self.get
     append = ret.append
+    width = self.width
+    height = self.height
     for dx in (-1, 0, 1):
       for dy in (-1, 0, 1):
         if not (dx or dy):
           continue
         try:
-          a = self.values[x + dx, y + dy]
+          adj_x = x + dx
+          if not 0 <= adj_x < width:
+              continue
+          adj_y = y + dy
+          if not 0 <= adj_y < height:
+              continue
+          a = self.values[adj_x, adj_y]
           if a is not None:
             append(a.get_view())
         except IndexError:
