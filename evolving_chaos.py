@@ -74,7 +74,7 @@ class AgentMind:
       call_type, move_mode, m = message
       assert isinstance(m, tuple)
       if call_type != self.call_type.val:
-        next
+        continue
       if self.my_plant:
         my_team = me.get_team()
         num_nearby = sum(1 for x in view.get_agents() if x.get_team() == my_team)
