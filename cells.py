@@ -13,12 +13,15 @@
 # - Desynchronize agents
 
 import ConfigParser
+import itertools
 import math
 import random
 import sys
 import time
 
+import numpy
 import pygame
+
 
 mind1 = __import__(sys.argv[1])
 mind2 = __import__(sys.argv[2])
@@ -189,33 +192,34 @@ class Game:
 class MapLayer:
   def __init__(self,size,val=0):
     self.size = self.width, self.height = size
-    self.values = [val for x in xrange(self.width*self.height) ]
+    self.values = numpy.array([[val for x in xrange(self.width)]
+                               for y in xrange(self.height)], numpy.object_)
 
   def get(self,x,y):
     if y >= 0 and x >= 0:
       try:
-        return self.values[x+y*self.width]
+        return self.values[x,y]
       except IndexError:
         return None
     return None
 
   def set(self, x, y, val):
-    self.values[x+y*self.width] = val
+    self.values[x,y] = val
   
   def in_range(self, x, y):
-    return (0<=x and x<self.width and 0<=y and y < self.height)
+    return (0 <= x < self.width and 0 <= y < self.height)
 
 
 class ScalarMapLayer(MapLayer):
   def set_random(self,range):
-    self.values = [random.randrange(range) for x in xrange(self.width*self.height) ]
+    self.values = numpy.random.random_integers(0, range-1, (self.width, self.height)) 
 
   def change(self, x, y, val):
-    self.values[x+y*self.width] += val
+    self.values[x, y] += val
+
 
 class ObjectMapLayer(MapLayer):
-  
-  def get_view(self, x, y, r):
+  def old_get_view(self, x, y, r):
     ret = []
     for x_off in xrange(-r,r+1):
       for y_off in xrange(-r,r+1):
@@ -225,6 +229,17 @@ class ObjectMapLayer(MapLayer):
         if a is not None:
           ret.append(a.get_view())
     return ret
+
+  def get_view(self, x, y, r):
+    indices = [(j, k) for j in xrange(x-r, x+r+1) for k in xrange(y-r, y+r+1)
+               if 0 <= j < self.width and 0 <= k < self.height and (j != x or k != y)]
+    a = [j[0] for j in indices]
+    b = [j[1] for j in indices]
+    slc = self.values[a,b].ravel()
+    slc = [a.get_view() for a in slc if a is not None]
+#    old_way = self.old_get_view(x, y, r)
+#    assert all(type(x) == type(y) for (x,y) in itertools.izip_longest(slc, old_way)), '%s; %s' % (slc, self.old_get_view(x,y,r))
+    return slc
 
   def insert(self,list):
     for o in list:
