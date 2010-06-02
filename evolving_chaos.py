@@ -3,7 +3,7 @@ import genes
 
 import cmath
 import math
-import random
+from random import random, randrange
 
 CallForHelpGene = genes.make_normally_perturbed_gene(0.01)
 CallOfDutyGene = genes.make_normally_perturbed_gene(0.01)
@@ -20,14 +20,14 @@ MODE_ATTACK = 6
 MODE_COLONIZE = 7
 
 def fuzz_coord(c):
-  return c+random.randrange(-1,2)
+  return c + randrange(-1,2)
 
 
 class AgentMind:
   def __init__(self, args):
     self.my_plant = None
     self.mode = MODE_NORMAL
-    self.target_range = random.randrange(50,200)
+    self.target_range = randrange(50,200)
     if args is None:
       self.call_for_help = CallForHelpGene(genes.InitializerGene(0.25))
       self.call_of_duty = CallOfDutyGene(genes.InitializerGene(0.75))
@@ -47,15 +47,15 @@ class AgentMind:
       self.colonize_prob = parent.colonize_prob.spawn()
 
   def _colonize_from(self, mx, my, mapsize):
-    tx = random.randrange(mapsize)
-    ty = random.randrange(mapsize)
+    tx = randrange(mapsize)
+    ty = randrange(mapsize)
     self._set_target(MODE_COLONIZE, tx, ty, mapsize)
 
   def _set_target(self, next_mode, tx, ty, mapsize):
     self.mode = MODE_PREP
     self.next_mode = next_mode
-    tx += random.randrange(-3, 4)
-    ty += random.randrange(-3, 4)
+    tx += randrange(-3, 4)
+    ty += randrange(-3, 4)
     tx = min(max(tx, 0), mapsize)
     ty = min(max(ty, 0), mapsize)
     self.target = (tx, ty)
@@ -68,26 +68,30 @@ class AgentMind:
     mp = (mx,my)= (me.x, me.y)
     map_size = view.energy_map.width
 
+    cfh_val = self.call_for_help.val
     for a in view.agent_views:
       if (a.team != me.team):
-        if random.random() > self.call_for_help.val:
+        if random() > cfh_val:
           msg.send_message((self.call_type.val, MODE_ATTACK, mp))
         return cells.Action(cells.ACT_ATTACK, (a.x, a.y))
 
+    my_call_type = self.call_type.val
+    my_plant = self.my_plant
     for message in msg.get_messages():
       call_type, move_mode, m = message
-      assert isinstance(m, tuple)
-      if call_type != self.call_type.val:
+      if call_type != my_call_type:
         continue
-      if self.my_plant:
+      if my_plant:
         my_team = me.team
         num_nearby = sum(1 for x in view.agent_views if x.team == my_team)
-        if num_nearby > 1 and random.random() > self.draft_dodger.val:
+        if num_nearby > 1 and random() > self.draft_dodger.val:
           tx, ty = m
           self._set_target(move_mode, tx, ty, map_size)
-      elif random.random() < self.call_of_duty.val:
+      elif random() < self.call_of_duty.val:
         tx, ty = m
         self._set_target(move_mode, tx, ty, map_size)
+
+    del my_plant  # Might change later, don't confuse myself by caching it.
 
     if view.plant_views:
       best_plant = max(view.plant_views, key=lambda x: x.eff)
@@ -102,10 +106,11 @@ class AgentMind:
 
     if self.mode == MODE_COLONIZE or self.mode == MODE_ATTACK:
       dist = abs(mx-self.target[0]) + abs(my-self.target[1])
+      my_team = me.team
       if (dist < 2 or
           (self.mode == MODE_COLONIZE and dist < 8 and
            sum(1 for a in view.agent_views
-               if a.team == me.team) > 7)):
+               if a.team == my_team) > 7)):
         self.my_plant = None
         self.mode = MODE_NORMAL
       else:
@@ -126,10 +131,10 @@ class AgentMind:
       if me.energy < dist*1.5:
         return cells.Action(cells.ACT_MOVE,
                             (fuzz_coord(my_plant.x), fuzz_coord(my_plant.y)))
-      if (random.random() < self.colonize_prob.val):
+      if (random() < self.colonize_prob.val):
         self._colonize_from(my_plant.x, my_plant.y, map_size)
 
-    if (random.random() < self.spawn_prob.val and
+    if (random() < self.spawn_prob.val and
         me.energy >= self.spawn_energy.val):
       return cells.Action(cells.ACT_SPAWN,
                           (fuzz_coord(mx), fuzz_coord(my), self))
