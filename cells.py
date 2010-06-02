@@ -85,8 +85,6 @@ class Game:
         self.terr = ScalarMapLayer(self.size)
         self.terr.set_random(5)
         self.minds = [m.AgentMind for m in mind_list]
-        self.update_fields = [(x, y) for x in xrange(self.width)
-                                     for y in xrange(self.height)]
 
         self.energy_map = ScalarMapLayer(self.size)
         self.energy_map.set_random(10)
@@ -154,15 +152,12 @@ class Game:
 
     def run_agents(self):
         views = []
-        self.update_fields = []
-        update_fields_append = self.update_fields.append
         agent_map_get_small_view_fast = self.agent_map.get_small_view_fast
         plant_map_get_small_view_fast = self.plant_map.get_small_view_fast
         energy_map = self.energy_map
         WV = WorldView
         views_append = views.append
         for a in self.agent_population:
-            update_fields_append(a.get_pos())
             x = a.x
             y = a.y
             agent_view = agent_map_get_small_view_fast(x, y)
