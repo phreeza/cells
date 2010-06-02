@@ -30,16 +30,17 @@ def get_mind(name):
     return sys.modules[full_name]
 
 bounds = None  # HACK
+symmetric = None
 mind1 = None
 mind2 = None
 
 def main():
-    global bounds, mind1, mind2
+    global bounds,symmetric, mind1, mind2
     try:
         config.read('default.cfg')
         bounds = config.getint('terrain', 'bounds')
+        symmetric = config.getboolean('terrain', 'symmetric')
         mind1 = get_mind(config.get('minds', 'mind1'))
-
         mind2 = get_mind(config.get('minds', 'mind2'))
 
     except Exception as e:
@@ -49,12 +50,14 @@ def main():
         config.set('minds', 'mind1', 'mind1')
         config.add_section('terrain')
         config.set('terrain', 'bounds', '300')
+        config.set('terrain', 'symmetric', 'true')
 
         with open('default.cfg', 'wb') as configfile:
             config.write(configfile)
 
         config.read('default.cfg')
         bounds = config.getint('terrain', 'bounds')
+        symmetric = config.getboolean('terrain', 'symmetric')
 
     # accept command line arguments for the minds over those in the config
     try:
@@ -102,15 +105,20 @@ class Game:
     self.agent_map = ObjectMapLayer(self.size,None)
     self.agent_population = []
     self.winner = False
+    if symmetric:
+        self.n_plants = 7
+    else:
+        self.n_plants = 14
 
-    for x in xrange(7):
+    for x in xrange(self.n_plants):
       mx = random.randrange(1,self.width-1)
       my = random.randrange(1,self.height-1)
       eff = random.randrange(5,11)
       p = Plant(mx, my, eff)
       self.plant_population.append(p)
-      p = Plant(my, mx, eff)
-      self.plant_population.append(p)
+      if symmetric:
+          p = Plant(my, mx, eff)
+          self.plant_population.append(p)
     self.plant_map.insert(self.plant_population)
     
     for idx in xrange(2):    
