@@ -20,14 +20,19 @@ import time
 
 import pygame
 
-mind1 = __import__(sys.argv[1])
-mind2 = __import__(sys.argv[2])
-
 config = ConfigParser.RawConfigParser()
 try:
     config.read('default.cfg')
     bounds = config.getint('terrain', 'bounds')
+    mind1_str = config.get('minds', 'mind1')
+    mind1 = __import__(mind1_str)
+    mind2_str = config.get('minds', 'mind2')
+    mind2 = __import__(mind2_str)
+
 except:
+    config.add_section('minds')
+    config.set('minds', 'mind2', 'mind2')
+    config.set('minds', 'mind1', 'mind1')
     config.add_section('terrain')
     config.set('terrain', 'bounds', '300')
 
@@ -36,6 +41,16 @@ except:
 
     config.read('default.cfg')
     bounds = config.getint('terrain', 'bounds')
+
+# accept command line arguments for the minds over those in the config
+try:
+    mind1 = __import__(sys.argv[1])
+    try:
+        mind2 = __import__(sys.argv[2])
+    except:
+        pass
+except:
+    pass
 
 
 try:
