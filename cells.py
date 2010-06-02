@@ -198,7 +198,7 @@ class Game:
       elif action.type == ACT_ATTACK:
         act_x, act_y = act_data = action.get_data()
         (new_x, new_y) = next_pos = self.get_next_move(agent.x, agent.y, act_x, act_y)
-        if self.agent_map.get(act_x, act_y) and (next_pos == act_data):
+        if self.agent_map.get(act_x, act_y) and (next_pos == act_data) and self.agent_map.get(act_x, act_y).alive:
           energy = self.agent_map.get(new_x, new_y).energy + 25
           self.energy_map.change(new_x, new_y, energy)
           self.del_agent(self.agent_map.get(new_x, new_y))
