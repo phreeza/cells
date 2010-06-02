@@ -64,16 +64,15 @@ class AgentMind:
     x_sum = 0
     y_sum = 0
     dir = 1
-    n = len(view.get_plants())
-    me = view.get_me()
-    mp = (mx,my)= me.get_pos()
-    map_size = view.get_energy().width
+    me = view.me
+    mp = (mx,my)= (me.x, me.y)
+    map_size = view.energy_map.width
 
-    for a in view.get_agents():
-      if (a.get_team()!=me.get_team()):
+    for a in view.agent_views:
+      if (a.team != me.team):
         if random.random() > self.call_for_help.val:
           msg.send_message((self.call_type.val, MODE_ATTACK, mp))
-        return cells.Action(cells.ActionType.ATTACK,a.get_pos())
+        return cells.Action(cells.ActionType.ATTACK, (a.x, a.y))
 
     for message in msg.get_messages():
       call_type, move_mode, m = message
@@ -81,8 +80,8 @@ class AgentMind:
       if call_type != self.call_type.val:
         continue
       if self.my_plant:
-        my_team = me.get_team()
-        num_nearby = sum(1 for x in view.get_agents() if x.get_team() == my_team)
+        my_team = me.team
+        num_nearby = sum(1 for x in view.agent_views if x.team == my_team)
         if num_nearby > 1 and random.random() > self.draft_dodger.val:
           tx, ty = m
           self._set_target(move_mode, tx, ty, map_size)
@@ -90,9 +89,9 @@ class AgentMind:
         tx, ty = m
         self._set_target(move_mode, tx, ty, map_size)
 
-    if n:
-      best_plant = max(view.get_plants(), key=lambda x: x.eff)
-      self.my_plant = view.get_plants()[0]
+    if view.plant_views:
+      best_plant = max(view.plant_views, key=lambda x: x.eff)
+      self.my_plant = best_plant
       self.mode = MODE_NORMAL
 
     if self.mode == MODE_PREP:
@@ -105,15 +104,15 @@ class AgentMind:
       dist = abs(mx-self.target[0]) + abs(my-self.target[1])
       if (dist < 2 or
           (self.mode == MODE_COLONIZE and dist < 8 and
-           sum(1 for a in view.get_agents()
-               if a.get_team() == me.get_team()) > 7)):
+           sum(1 for a in view.agent_views
+               if a.team == me.team) > 7)):
         self.my_plant = None
         self.mode = MODE_NORMAL
       else:
         return cells.Action(cells.ActionType.MOVE,self.target)
 
     if me.energy < self.target_range:
-      if view.get_energy().get(mx, my) > 0:
+      if view.energy_map.get(mx, my) > 0:
         return cells.Action(cells.ActionType.EAT)
       elif self.my_plant is not None:
         mp = self.my_plant
@@ -121,13 +120,14 @@ class AgentMind:
       else:
         self._colonize_from(mx, my, map_size)
 
-    if self.my_plant:
+    my_plant = self.my_plant
+    if my_plant is not None:
       dist = max(abs(mx-self.my_plant.get_pos()[0]),abs(my-self.my_plant.get_pos()[1])) 
       if me.energy < dist*1.5:
-        (mx,my) = self.my_plant.get_pos()
-        return cells.Action(cells.ActionType.MOVE, (fuzz_coord(mx), fuzz_coord(my)))
+        return cells.Action(cells.ActionType.MOVE,
+                            (fuzz_coord(my_plant.x), fuzz_coord(my_plant.y)))
       if (random.random() < self.colonize_prob.val):
-        self._colonize_from(self.my_plant.x, self.my_plant.y, map_size)
+        self._colonize_from(my_plant.x, my_plant.y, map_size)
 
     if (random.random() < self.spawn_prob.val and
         me.energy >= self.spawn_energy.val):
