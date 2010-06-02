@@ -162,38 +162,38 @@ class Game:
     #apply agent actions
     for (agent,action) in actions:
       agent.energy -= 1
-      if agent.alive:
-        if action.type == ACT_MOVE:
-          act_x, act_y = action.get_data()
-          (new_x, new_y) = self.get_next_move(agent.x, agent.y, act_x, act_y)
-          if self.agent_map.in_range(new_x, new_y) and not self.agent_map.get(new_x, new_y):
-            self.move_agent(agent, new_x, new_y)
-        elif action.type == ACT_SPAWN:
-          act_x, act_y = action.get_data()[:2]
-          (new_x, new_y) = self.get_next_move(agent.x, agent.y, act_x, act_y)
-          if self.agent_map.in_range(new_x, new_y) and (not self.agent_map.get(new_x, new_y)) and agent.energy >= 50:
-            a = Agent(new_x, new_y, agent.get_team(),self.minds[agent.get_team()], action.get_data()[2:])
-            self.add_agent(a)
-            agent.energy -= 50
-        elif action.type == ACT_EAT:
-          intake = self.energy_map.get(agent.x, agent.y)
-          agent.energy += intake
-          self.energy_map.change(agent.x, agent.y, -intake)
-        elif action.type == ACT_ATTACK:
-          act_x, act_y = act_data = action.get_data()
-          (new_x, new_y) = next_pos = self.get_next_move(agent.x, agent.y, act_x, act_y)
-          if self.agent_map.get(act_x, act_y) and (next_pos == act_data):
-            energy = self.agent_map.get(new_x, new_y).energy + 25
-            self.energy_map.change(new_x, new_y, energy)
-            self.del_agent(self.agent_map.get(new_x, new_y))
-        elif action.type == ACT_LIFT:
-          if not agent.loaded and self.terr.get(agent.x, agent.y) > 0:
-            agent.loaded = True
-            self.terr.change(agent.x, agent.y, -1)
-        elif action.type == ACT_DROP:
-          if agent.loaded:
-            agent.loaded = False
-            self.terr.change(agent.x, agent.y, 1)
+#      if agent.alive:
+      if action.type == ACT_MOVE:
+        act_x, act_y = action.get_data()
+        (new_x, new_y) = self.get_next_move(agent.x, agent.y, act_x, act_y)
+        if self.agent_map.in_range(new_x, new_y) and not self.agent_map.get(new_x, new_y):
+          self.move_agent(agent, new_x, new_y)
+      elif action.type == ACT_SPAWN:
+        act_x, act_y = action.get_data()[:2]
+        (new_x, new_y) = self.get_next_move(agent.x, agent.y, act_x, act_y)
+        if self.agent_map.in_range(new_x, new_y) and (not self.agent_map.get(new_x, new_y)) and agent.energy >= 50:
+          a = Agent(new_x, new_y, agent.get_team(),self.minds[agent.get_team()], action.get_data()[2:])
+          self.add_agent(a)
+          agent.energy -= 50
+      elif action.type == ACT_EAT:
+        intake = self.energy_map.get(agent.x, agent.y)
+        agent.energy += intake
+        self.energy_map.change(agent.x, agent.y, -intake)
+      elif action.type == ACT_ATTACK:
+        act_x, act_y = act_data = action.get_data()
+        (new_x, new_y) = next_pos = self.get_next_move(agent.x, agent.y, act_x, act_y)
+        if self.agent_map.get(act_x, act_y) and (next_pos == act_data):
+          energy = self.agent_map.get(new_x, new_y).energy + 25
+          self.energy_map.change(new_x, new_y, energy)
+          self.del_agent(self.agent_map.get(new_x, new_y))
+      elif action.type == ACT_LIFT:
+        if not agent.loaded and self.terr.get(agent.x, agent.y) > 0:
+          agent.loaded = True
+          self.terr.change(agent.x, agent.y, -1)
+      elif action.type == ACT_DROP:
+        if agent.loaded:
+          agent.loaded = False
+          self.terr.change(agent.x, agent.y, 1)
 
     #let agents die if their energy is too low
     team = [0, 0]
