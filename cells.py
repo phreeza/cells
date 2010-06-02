@@ -124,49 +124,58 @@ class Game:
   def run_agents(self):
     views = []
     self.update_fields = []
+    update_fields_append = self.update_fields.append
+    agent_map_get_small_view_fast = self.agent_map.get_small_view_fast
+    plant_map_get_small_view_fast = self.plant_map.get_small_view_fast
+    energy_map = self.energy_map
+    WV = WorldView
+    views_append = views.append
     for a in self.agent_population:
-      self.update_fields.append(a.get_pos())
-      agent_view = self.agent_map.get_small_view_fast(a.x, a.y)
-      plant_view = self.plant_map.get_small_view_fast(a.x, a.y)
-      world_view = WorldView(a,agent_view,plant_view,self.energy_map)
-      views.append((a,world_view))
+      update_fields_append(a.get_pos())
+      x = a.x
+      y = a.y
+      agent_view = agent_map_get_small_view_fast(x, y)
+      plant_view = plant_map_get_small_view_fast(x, y)
+      world_view = WV(a, agent_view, plant_view, energy_map)
+      views_append((a,world_view))
     
     #get actions
-    actions = [(a,a.act(v,self.messages[a.get_team()])) for (a,v) in views]
+    messages = self.messages
+    actions = [(a, a.act(v, messages[a.team])) for (a,v) in views]
     random.shuffle(actions)
 
     #apply agent actions
     for (agent,action) in actions:
       agent.energy -= 1
       if agent.alive:
-        if (action.get_type() == ActionType.MOVE):
+        if (action.get_type() == ACT_MOVE):
           act_x, act_y = action.get_data()
           (new_x, new_y) = self.get_next_move(agent.x, agent.y, act_x, act_y)
           if self.agent_map.in_range(new_x, new_y) and not self.agent_map.get(new_x, new_y):
             self.move_agent(agent, new_x, new_y)
-        elif (action.get_type() == ActionType.SPAWN):
+        elif (action.get_type() == ACT_SPAWN):
           act_x, act_y = action.get_data()[:2]
           (new_x, new_y) = self.get_next_move(agent.x, agent.y, act_x, act_y)
           if self.agent_map.in_range(new_x, new_y) and (not self.agent_map.get(new_x, new_y)) and agent.energy >= 50:
             a = Agent(new_x, new_y, agent.get_team(),self.minds[agent.get_team()], action.get_data()[2:])
             self.add_agent(a)
             agent.energy -= 50
-        elif (action.get_type() == ActionType.EAT):
+        elif (action.get_type() == ACT_EAT):
           intake = self.energy_map.get(agent.x, agent.y)
           agent.energy += intake
           self.energy_map.change(agent.x, agent.y, -intake)
-        elif (action.get_type() == ActionType.ATTACK):
+        elif (action.get_type() == ACT_ATTACK):
           act_x, act_y = act_data = action.get_data()
           (new_x, new_y) = next_pos = self.get_next_move(agent.x, agent.y, act_x, act_y)
           if self.agent_map.get(act_x, act_y) and (next_pos == act_data):
             energy = self.agent_map.get(new_x, new_y).energy + 25
             self.energy_map.change(new_x, new_y, energy)
             self.del_agent(self.agent_map.get(new_x, new_y))
-        elif (action.get_type() == ActionType.LIFT):
+        elif (action.get_type() == ACT_LIFT):
           if not agent.loaded and self.terr.get(agent.x, agent.y) > 0:
             agent.loaded = True
             self.terr.change(agent.x, agent.y, -1)
-        elif (action.get_type() == ActionType.DROP):
+        elif (action.get_type() == ACT_DROP):
           if agent.loaded:
             agent.loaded = False
             self.terr.change(agent.x, agent.y, 1)
@@ -185,7 +194,7 @@ class Game:
     self.run_plants() 
     for msg in self.messages:
       msg.update()
-    self.time = self.time+1
+    self.time += 1
 #pygame.time.wait(int(1000*(time.time()-self.tic)))
     self.tic = time.time()
 
@@ -263,6 +272,8 @@ class ObjectMapLayer(MapLayer):
       self.set(o.x, o.y, o)
 
 class Agent:
+  __slots__ = ['x', 'y', 'mind', 'energy', 'alive', 'team', 'loaded', 'color',
+               'act']
   def __init__(self, x, y, team, AgentMind, cargs):
     self.x = x
     self.y = y
@@ -296,13 +307,7 @@ class Agent:
 #def act(self,view,m):
 #   return self.mind.act(view,m)
 
-class ActionType:
-  SPAWN = 0
-  MOVE = 1
-  EAT = 2
-  ATTACK = 3
-  LIFT = 4
-  DROP = 5
+ACT_SPAWN, ACT_MOVE, ACT_EAT, ACT_ATTACK, ACT_LIFT, ACT_DROP = range(6)
 
 class Action:
   def __init__(self,type,data=None):

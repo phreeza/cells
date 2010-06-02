@@ -18,7 +18,7 @@ class AgentMind:
     for a in view.get_agents():
       if (a.get_team()!=me.get_team()):
         msg.send_message(mp)
-        return cells.Action(cells.ActionType.ATTACK,a.get_pos())
+        return cells.Action(cells.ACT_ATTACK,a.get_pos())
 
     for m in msg.get_messages():
       r = random.random()
@@ -43,19 +43,19 @@ class AgentMind:
     if self.mode == 6:
       dist = max(abs(mx-self.target[0]),abs(my-self.target[1]))
       if dist > 4:
-        return cells.Action(cells.ActionType.MOVE,self.target)
+        return cells.Action(cells.ACT_MOVE,self.target)
       else:
         self.my_plant = None
         self.mode = 0
 
     if (me.energy < self.target_range) and (view.get_energy().get(mx, my) > 0):
-      return cells.Action(cells.ActionType.EAT)
+      return cells.Action(cells.ACT_EAT)
 
     if self.my_plant:
       dist = max(abs(mx-self.my_plant.get_pos()[0]),abs(my-self.my_plant.get_pos()[1])) 
       if me.energy < dist*1.5:
         (mx,my) = self.my_plant.get_pos()
-        return cells.Action(cells.ActionType.MOVE,(mx+random.randrange(-1,2),my+random.randrange(-1,2)))
+        return cells.Action(cells.ACT_MOVE,(mx+random.randrange(-1,2),my+random.randrange(-1,2)))
       if (random.random()>0.9999):
         (mx,my) = self.my_plant.get_pos()
         dtheta = random.random() * 2 * math.pi
@@ -65,6 +65,6 @@ class AgentMind:
         msg.send_message((m.real, m.imag)) 
 
     if (random.random()>0.9 and me.energy >= 50):
-      return cells.Action(cells.ActionType.SPAWN,(mx+random.randrange(-1,2),my+random.randrange(-1,2)))
+      return cells.Action(cells.ACT_SPAWN,(mx+random.randrange(-1,2),my+random.randrange(-1,2)))
     else:
-      return cells.Action(cells.ActionType.MOVE,(mx+random.randrange(-1,2),my+random.randrange(-1,2)))
+      return cells.Action(cells.ACT_MOVE,(mx+random.randrange(-1,2),my+random.randrange(-1,2)))

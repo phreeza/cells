@@ -17,7 +17,7 @@ class AgentMind:
 
     for a in view.get_agents():
       if (a.get_team()!=me.get_team()):
-        return cells.Action(cells.ActionType.ATTACK,a.get_pos())
+        return cells.Action(cells.ACT_ATTACK,a.get_pos())
 
     if(n>0):
       if (not self.my_plant):
@@ -27,19 +27,19 @@ class AgentMind:
 
     if (((me.energy < self.target_range) and (view.get_energy().get(mx, my) > 0)) 
         or (view.get_energy().get(mx, my) > 100)) :
-      return cells.Action(cells.ActionType.EAT)
+      return cells.Action(cells.ACT_EAT)
 
     if self.my_plant:
       dist = max(abs(mx-self.my_plant.get_pos()[0]),abs(my-self.my_plant.get_pos()[1]))
       if not me.loaded and dist < 5 and random.random() > 0.5:
-        return cells.Action(cells.ActionType.LIFT)
+        return cells.Action(cells.ACT_LIFT)
       if me.loaded and dist > 5:
-        return cells.Action(cells.ActionType.DROP)
+        return cells.Action(cells.ACT_DROP)
       if view.get_me().energy < dist*1.5:
         (mx,my) = self.my_plant.get_pos()
-        return cells.Action(cells.ActionType.MOVE,(mx+random.randrange(-1,2),my+random.randrange(-1,2)))
+        return cells.Action(cells.ACT_MOVE,(mx+random.randrange(-1,2),my+random.randrange(-1,2)))
 
     if (random.random()>0.9):
-      return cells.Action(cells.ActionType.SPAWN,(mx+random.randrange(-1,2),my+random.randrange(-1,2)))
+      return cells.Action(cells.ACT_SPAWN,(mx+random.randrange(-1,2),my+random.randrange(-1,2)))
     else:
-      return cells.Action(cells.ActionType.MOVE,(mx+random.randrange(-1,2),my+random.randrange(-1,2)))
+      return cells.Action(cells.ACT_MOVE,(mx+random.randrange(-1,2),my+random.randrange(-1,2)))
