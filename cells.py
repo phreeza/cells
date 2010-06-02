@@ -221,7 +221,7 @@ class Game:
       self.winner = True
 
   def tick(self):
-    self.disp.update(self.terr,self.agent_population,self.plant_population,self.update_fields)
+    self.disp.update(self.terr,self.agent_population,self.plant_population,self.energy_map)
     self.disp.flip()
     
     # test for spacebar pressed - if yes, restart
@@ -421,26 +421,24 @@ class Display:
     pygame.init()
     self.screen = pygame.display.set_mode(self.size)
 
-  def update(self,terr,pop,plants,upfields):
+  def update(self,terr,pop,plants,energy_map):
     for event in pygame.event.get():
       if event.type == pygame.QUIT: 
         sys.exit()
-
-    for f in upfields:
-      (x,y)=f
-      scaled_x = x * self.scale
-      scaled_y = y * self.scale
-      self.screen.fill((min(255,20*terr.get(x,y)),min(255,10*terr.get(x,y)),0),pygame.Rect((scaled_x,scaled_y),(self.scale,self.scale)))
+    
+    r=numpy.minimum(20*terr.values,150*numpy.ones_like(terr.values))
+    g=numpy.minimum(10*terr.values+15*energy_map.values,150*numpy.ones_like(terr.values))
+    b=numpy.zeros_like(terr.values)
+    img=numpy.dstack((r,g,b))
+    
     for a in pop:
-      (x,y)=a.get_pos()
-      x *= self.scale
-      y *= self.scale
-      self.screen.fill(a.color,pygame.Rect((x,y),(self.scale,self.scale)))
+      img[a.get_pos()]=a.color
+      
     for a in plants:
-      (x,y)=a.get_pos()
-      x *= self.scale
-      y *= self.scale
-      self.screen.fill(self.green,pygame.Rect((x,y),(self.scale,self.scale)))
+      img[a.get_pos()]=self.green
+      
+    pygame.transform.scale(pygame.surfarray.make_surface(img),
+                           (self.width*self.scale,self.height*self.scale),self.screen)
 
   def flip(self):
     pygame.display.flip()
