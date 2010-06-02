@@ -1,5 +1,6 @@
 #
 #  Benjamin C. Meyer
+#  Modified by Scott Wolchok
 #
 #  Overall rules:
 #  Agents at plants reproduce as much as possible
@@ -19,9 +20,19 @@
 
 import random, cells
 
+import numpy
+
 import genes
 
 CallTypeGene = genes.make_drastic_mutation_gene(0.01)
+
+def signum(x):
+  if x > 0:
+    return 1
+  if x < 0:
+    return -1
+  return 0
+
 
 class MessageType:
   ATTACK = 0
@@ -29,8 +40,8 @@ class MessageType:
 class AgentMind:
   def __init__(self, args):
     # The direction to walk in
-    self.x = random.randrange(-3,3)
-    self.y = random.randrange(-3,3)
+    self.x = random.randrange(-3,4)
+    self.y = random.randrange(-3,4)
     # Don't come to the rescue, continue looking for plants & bad guys
     self.scout = (random.random() > 0.9)
     # Once we are attacked (mainly) those reproducing at plants should eat up a defense
@@ -48,6 +59,32 @@ class AgentMind:
         self.call_type = parent.call_type.spawn()
 
 
+  def get_available_space_grid(self, me, view):
+    grid = numpy.ones((3,3))
+    for agent in view.get_agents():
+      grid[agent.x - me.x + 1, agent.y - me.y + 1] = 0
+    for plant in view.get_plants():
+      grid[plant.x - me.x + 1, plant.y - me.y + 1] = 0
+    grid[1,1] = 0
+    return grid
+
+  def smart_spawn(self, me, view):
+    grid = self.get_available_space_grid(me, view)
+    for x in xrange(3):
+      for y in range(3):
+        if grid[x,y]:
+          return (x-1, y-1)
+    return (-1, -1)
+
+  def would_bump(self, me, view, dir_x, dir_y):
+    grid = self.get_available_space_grid(me, view)
+    dx = signum(dir_x)
+    dy = signum(dir_y)
+    adj_dx = dx + 1
+    adj_dy = dy + 1
+    return grid[adj_dx,adj_dy] == 0
+
+
   def act(self, view, msg):
     me = view.get_me()
     my_pos = (mx,my) = me.get_pos()
@@ -57,7 +94,8 @@ class AgentMind:
       if (a.get_team() != me.get_team()):
         msg.send_message((self.call_type.val, MessageType.ATTACK, mx,my))
         if (me.energy > 2000) :
-            return cells.Action(cells.ACT_SPAWN,(mx+random.randrange(-5,5),my+random.randrange(-5,5), self))
+            spawn_x, spawn_y = self.smart_spawn(me, view)
+            return cells.Action(cells.ACT_SPAWN, (me.x + spawn_x, me.y + spawn_y, self))
         return cells.Action(cells.ACT_ATTACK, a.get_pos())
 
     # Eat any energy I find until I am 'full'
@@ -68,16 +106,17 @@ class AgentMind:
            return cells.Action(cells.ACT_EAT)
 
     # If there is a plant near by go to it and spawn all I can
-    if (not self.my_plant) :
+    if self.my_plant is None :
         plants = view.get_plants()
         if plants :
             self.my_plant = plants[0]
-    if (self.my_plant and (self.children < 50 or random.random()>0.9)):
-        self.children += 1;
-        return cells.Action(cells.ACT_SPAWN,(mx+random.randrange(-5,5),my+random.randrange(-5,5), self))
+            self.x = self.y = 0
+    if self.my_plant:
+        spawn_x, spawn_y = self.smart_spawn(me, view)
+        return cells.Action(cells.ACT_SPAWN, (me.x + spawn_x, me.y + spawn_y, self))
 
     # If I get the message of help go and rescue!
-    if (self.step == 0 and True != self.scout and (random.random()>0.2)) :
+    if (self.step == 0 and not self.scout and (random.random()>0.2)) :
         ax = 0;
         ay = 0;
         best = 1000;
@@ -115,13 +154,13 @@ class AgentMind:
     # hit world wall
     map_size = view.energy_map.width
     if (mx == 0 or mx == map_size-1) :
-        self.x = random.randrange(-1,1)
+        self.x = random.randrange(-1,2)
     if (my == 0 or my == map_size-1) :
-        self.y = random.randrange(-1,1)
+        self.y = random.randrange(-1,2)
 
     # Back to step 0 we can change direction at the next attack
     if (self.step > 0):
         self.step -= 1;
 
     # Move quickly randomly in my birth direction
-    return cells.Action(cells.ACT_MOVE,(mx+self.x+random.randrange(-1,1),my+self.y+random.randrange(-1,1)))
+    return cells.Action(cells.ACT_MOVE,(mx+self.x+random.randrange(-1,2),my+self.y+random.randrange(-1,2)))
