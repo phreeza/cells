@@ -91,7 +91,8 @@ class Game:
         self.terr = ScalarMapLayer(self.size)
         self.terr.set_random(5)
         self.minds = [m.AgentMind for m in mind_list]
-        self.update_fields = [(x,y) for x in xrange(self.width) for y in xrange(self.height)]
+        self.update_fields = [(x, y) for x in xrange(self.width)
+                                     for y in xrange(self.height)]
 
         self.energy_map = ScalarMapLayer(self.size)
         self.energy_map.set_random(10)
@@ -122,7 +123,8 @@ class Game:
             (mx,my) = self.plant_population[idx].get_pos()
             fuzzed_x = mx + random.randrange(-1,2)
             fuzzed_y = my + random.randrange(-1,2)
-            self.agent_population.append(Agent(fuzzed_x, fuzzed_y, idx, self.minds[idx], None))
+            self.agent_population.append(Agent(fuzzed_x, fuzzed_y, idx,
+                                               self.minds[idx], None))
             self.agent_map.insert(self.agent_population)
 
     def run_plants(self):
@@ -183,14 +185,21 @@ class Game:
 #      if agent.alive:
             if action.type == ACT_MOVE:
                 act_x, act_y = action.get_data()
-                (new_x, new_y) = self.get_next_move(agent.x, agent.y, act_x, act_y)
-                if self.agent_map.in_range(new_x, new_y) and not self.agent_map.get(new_x, new_y):
+                (new_x, new_y) = self.get_next_move(agent.x, agent.y,
+                                                    act_x, act_y)
+                if (self.agent_map.in_range(new_x, new_y) and
+                    not self.agent_map.get(new_x, new_y)):
                     self.move_agent(agent, new_x, new_y)
             elif action.type == ACT_SPAWN:
                 act_x, act_y = action.get_data()[:2]
-                (new_x, new_y) = self.get_next_move(agent.x, agent.y, act_x, act_y)
-                if self.agent_map.in_range(new_x, new_y) and (not self.agent_map.get(new_x, new_y)) and agent.energy >= 50:
-                    a = Agent(new_x, new_y, agent.get_team(),self.minds[agent.get_team()], action.get_data()[2:])
+                (new_x, new_y) = self.get_next_move(agent.x, agent.y,
+                                                    act_x, act_y)
+                if (self.agent_map.in_range(new_x, new_y) and
+                    not self.agent_map.get(new_x, new_y) and
+                    agent.energy >= 50):
+                    a = Agent(new_x, new_y, agent.get_team(),
+                              self.minds[agent.get_team()],
+                              action.get_data()[2:])
                     self.add_agent(a)
                     agent.energy -= 50
             elif action.type == ACT_EAT:
@@ -199,8 +208,11 @@ class Game:
                 self.energy_map.change(agent.x, agent.y, -intake)
             elif action.type == ACT_ATTACK:
                 act_x, act_y = act_data = action.get_data()
-                (new_x, new_y) = next_pos = self.get_next_move(agent.x, agent.y, act_x, act_y)
-                if self.agent_map.get(act_x, act_y) and (next_pos == act_data) and self.agent_map.get(act_x, act_y).alive:
+                next_pos = self.get_next_move(agent.x, agent.y, act_x, act_y)
+                new_x, new_y = next_pos
+                victim = self.agent_map.get(act_x, act_y)
+                if (victim is not None and next_pos == act_data and
+                    victim.alive):
                     energy = self.agent_map.get(new_x, new_y).energy + 25
                     self.energy_map.change(new_x, new_y, energy)
                     self.del_agent(self.agent_map.get(new_x, new_y))
@@ -229,12 +241,14 @@ class Game:
             self.winner = True
 
     def tick(self):
-        self.disp.update(self.terr,self.agent_population,self.plant_population,self.update_fields)
+        self.disp.update(self.terr, self.agent_population,
+                         self.plant_population,self.update_fields)
         self.disp.flip()
 
         # test for spacebar pressed - if yes, restart
         for event in pygame.event.get():
-            if (event.type == pygame.locals.KEYUP and event.key == pygame.locals.K_SPACE):
+            if (event.type == pygame.locals.KEYUP and
+                event.key == pygame.locals.K_SPACE):
                 self.winner = -1
 
         self.run_agents()
@@ -252,7 +266,8 @@ class MapLayer:
     def __init__(self,size,val=0):
         self.size = self.width, self.height = size
         self.values = numpy.array([[val for x in xrange(self.width)]
-                                   for y in xrange(self.height)], numpy.object_)
+                                   for y in xrange(self.height)],
+                                  numpy.object_)
 
     def get(self,x,y):
         if y >= 0 and x >= 0:
@@ -271,24 +286,14 @@ class MapLayer:
 
 class ScalarMapLayer(MapLayer):
     def set_random(self,range):
-        self.values = numpy.random.random_integers(0, range-1, (self.width, self.height))
+        self.values = numpy.random.random_integers(0, range - 1,
+                                                   (self.width, self.height))
 
     def change(self, x, y, val):
         self.values[x, y] += val
 
 
 class ObjectMapLayer(MapLayer):
-#   def get_view(self, x, y, r):
-#     indices = [(j, k) for j in xrange(x-r, x+r+1) for k in xrange(y-r, y+r+1)
-#                if 0 <= j < self.width and 0 <= k < self.height and (j != x or k != y)]
-#     a = [j[0] for j in indices]
-#     b = [j[1] for j in indices]
-#     slc = self.values[a,b]
-#     slc = [a.get_view() for a in slc if a is not None]
-# #    old_way = self.old_get_view(x, y, r)
-# #    assert all(type(x) == type(y) for (x,y) in itertools.izip_longest(slc, old_way)), '%s; %s' % (slc, self.old_get_view(x,y,r))
-#     return slc
-
     def get_small_view_fast(self, x, y):
         ret = []
         get = self.get
@@ -437,21 +442,26 @@ class Display:
             if event.type == pygame.QUIT:
                 sys.exit()
 
+        scale_tup = (self.scale, self.scale)
         for f in upfields:
             (x,y)=f
             scaled_x = x * self.scale
             scaled_y = y * self.scale
-            self.screen.fill((min(255,20*terr.get(x,y)),min(255,10*terr.get(x,y)),0),pygame.Rect((scaled_x,scaled_y),(self.scale,self.scale)))
+            self.screen.fill((min(255, 20 * terr.get(x, y)),
+                              min(255, 10 * terr.get(x, y)),
+                              0),
+                             pygame.Rect((scaled_x, scaled_y),
+                                         scale_tup))
         for a in pop:
             (x,y)=a.get_pos()
             x *= self.scale
             y *= self.scale
-            self.screen.fill(a.color,pygame.Rect((x,y),(self.scale,self.scale)))
+            self.screen.fill(a.color, pygame.Rect((x, y), scale_tup))
         for a in plants:
             (x,y)=a.get_pos()
             x *= self.scale
             y *= self.scale
-            self.screen.fill(self.green,pygame.Rect((x,y),(self.scale,self.scale)))
+            self.screen.fill(self.green, pygame.Rect((x, y), scale_tup))
 
     def flip(self):
         pygame.display.flip()
