@@ -513,6 +513,6 @@ class Message:
 if __name__ == "__main__":
     main()
     while 1:
-        game = Game(bounds,mind_list,symmetric,1000)
+        game = Game(bounds,mind_list,symmetric,-1)
         while game.winner == None:
             game.tick()

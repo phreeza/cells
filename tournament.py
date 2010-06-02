@@ -49,8 +49,19 @@ def main():
 
 if __name__ == "__main__":
     main()
-    tournament_list = [[mind_list[a],mind_list[b]] for a in range(len(mind_list)) for b in range (a)]
+    scores = [0 for x in mind_list]
+    tournament_list = [[mind_list[a], mind_list[b]] for a in range(len(mind_list)) for b in range (a)]
     for pair in tournament_list:
         game = Game(bounds,pair,symmetric,1000)
-        while not game.winner:
+        while game.winner == None:
             game.tick()
+        if game.winner >= 0:
+            idx = mind_list.index(pair[game.winner])
+            scores[idx] += 3
+        if game.winner == -1:
+            idx = mind_list.index(pair[0])
+            scores[idx] += 1
+            idx = mind_list.index(pair[1])
+            scores[idx] += 1
+        print scores
+
