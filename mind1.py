@@ -30,10 +30,10 @@ class AgentMind:
       return cells.Action(cells.ACT_EAT)
 
     if self.my_plant:
-      dist = max(abs(mx-self.my_plant.get_pos()[0]),abs(my-self.my_plant.get_pos()[1]))
-      if not me.loaded and dist < 5 and random.random() > 0.5:
+      dist = max(abs(mx-self.my_plant.get_pos()[0]), abs(my-self.my_plant.get_pos()[1]))
+      if not me.loaded and (dist < 5 or dist > 7) and random.random() > 0.5:
         return cells.Action(cells.ACT_LIFT)
-      if me.loaded and dist > 5:
+      if me.loaded and dist > 5 and dist < 7:
         return cells.Action(cells.ACT_DROP)
       if view.get_me().energy < dist*1.5:
         (mx,my) = self.my_plant.get_pos()
