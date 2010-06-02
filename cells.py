@@ -62,9 +62,9 @@ def main():
         mind1 = get_mind(sys.argv[1])
         try:
             mind2 = get_mind(sys.argv[2])
-        except ImportError:
+        except (IndexError,ImportError):
             pass
-    except ImportError:
+    except (IndexError,ImportError):
         pass
 
 
