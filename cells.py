@@ -31,23 +31,21 @@ def get_mind(name):
 
 bounds = None  # HACK
 symmetric = None
-mind1 = None
-mind2 = None
+mind_list = None
 
 def main():
-    global bounds,symmetric, mind1, mind2
+    global bounds,symmetric, mind_list
     try:
         config.read('default.cfg')
         bounds = config.getint('terrain', 'bounds')
         symmetric = config.getboolean('terrain', 'symmetric')
-        mind1 = get_mind(config.get('minds', 'mind1'))
-        mind2 = get_mind(config.get('minds', 'mind2'))
+        minds_str = str(config.get('minds', 'minds'))
+        mind_list = [get_mind(n) for n in minds_str.split(',')]
 
     except Exception as e:
         print 'Got error: %s' % e
         config.add_section('minds')
-        config.set('minds', 'mind2', 'mind2')
-        config.set('minds', 'mind1', 'mind1')
+        config.set('minds', 'minds', 'mind1,mind2')
         config.add_section('terrain')
         config.set('terrain', 'bounds', '300')
         config.set('terrain', 'symmetric', 'true')
@@ -61,12 +59,9 @@ def main():
 
     # accept command line arguments for the minds over those in the config
     try:
-        mind1 = get_mind(sys.argv[1])
-        try:
-            mind2 = get_mind(sys.argv[2])
-        except ImportError:
-            pass
-    except ImportError:
+        if len(sys.argv)>2:
+            mind_list = [get_mind(n) for n in sys.argv[1:] ]
+    except (ImportError,IndexError):
         pass
 
 
@@ -87,13 +82,13 @@ def signum(x):
 class Game:
   def __init__(self):
     self.size = self.width,self.height = (bounds,bounds)
-    self.messages = [MessageQueue(), MessageQueue()]
+    self.messages = [MessageQueue() for x in mind_list]
     self.disp = Display(self.size,scale=2)
     self.time = 0
     self.tic = time.time()
     self.terr = ScalarMapLayer(self.size)
     self.terr.set_random(5)
-    self.minds = [mind1.AgentMind,mind2.AgentMind]
+    self.minds = [m.AgentMind for m in mind_list]
     self.update_fields = [(x,y) for x in xrange(self.width) for y in xrange(self.height)]
 
     self.energy_map = ScalarMapLayer(self.size)
@@ -121,7 +116,7 @@ class Game:
           self.plant_population.append(p)
     self.plant_map.insert(self.plant_population)
     
-    for idx in xrange(2):    
+    for idx in xrange(len(self.minds)):    
       (mx,my) = self.plant_population[idx].get_pos() 
       fuzzed_x = mx + random.randrange(-1,2)
       fuzzed_y = my + random.randrange(-1,2)
@@ -217,7 +212,7 @@ class Game:
           self.terr.change(agent.x, agent.y, 1)
 
     #let agents die if their energy is too low
-    team = [0, 0]
+    team = [0 for n in self.minds]
     for (agent,action) in actions:
       if agent.energy < 0 and agent.alive:
         self.energy_map.change(agent.x, agent.y, 25)
@@ -335,10 +330,8 @@ class Agent:
     self.alive = True
     self.team = team
     self.loaded = False
-    if team == 0:
-      self.color = (255,0,0)
-    else:
-      self.color = (0,0,255)
+    colors = [(255,0,0),(0,0,255),(255,0,255),(255,255,0)] 
+    self.color = colors[team%len(colors)]
     self.act = self.mind.act
 
   def get_team(self):
