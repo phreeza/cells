@@ -4,6 +4,7 @@ For more information see: http://phonons.wordpress.com/2010/06/01/cells-a-massiv
 
 Requirements:
 pygame
+numpy
 
 Optional:
 psyco
