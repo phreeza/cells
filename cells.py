@@ -89,6 +89,7 @@ class Game:
 
     self.agent_map = ObjectMapLayer(self.size,None)
     self.agent_population = []
+    self.winner = False
 
     for x in xrange(7):
       mx = random.randrange(self.width)
@@ -195,10 +196,19 @@ class Game:
             self.terr.change(agent.x, agent.y, 1)
 
     #let agents die if their energy is too low
+    team = [0, 0]
     for (agent,action) in actions:
       if agent.energy < 0 and agent.alive:
         self.energy_map.change(agent.x, agent.y, 25)
         self.del_agent(agent)
+      else :
+        team[agent.team] += 1
+    if (team[0] == 0) :
+      print "Winner is blue in: " + str(self.time)
+      self.winner = True
+    if (team[1] == 0) :
+      print "Winner is red in: " + str(self.time)
+      self.winner = True
 
   def tick(self):
     self.disp.update(self.terr,self.agent_population,self.plant_population,self.update_fields)
@@ -452,6 +462,7 @@ class Message:
     return self.message
 
 if __name__ == "__main__":
-  game = Game()
   while 1:
-    game.tick()
+    game = Game()
+    while not game.winner:
+        game.tick()
