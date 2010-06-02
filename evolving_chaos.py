@@ -33,7 +33,7 @@ class AgentMind:
       self.call_of_duty = CallOfDutyGene(genes.InitializerGene(0.75))
       self.draft_dodger = DraftDodgerGene(genes.InitializerGene(0.75))
       self.spawn_prob = SpawnProbabilityGene(genes.InitializerGene(0.1))
-      self.spawn_energy = SpawnEnergyThresholdGene(genes.InitializerGene(60))
+      self.spawn_energy = SpawnEnergyThresholdGene(genes.InitializerGene(50))
       self.call_type = CallTypeGene(genes.InitializerGene(0))
       self.colonize_prob = ColonizeProbabilityGene(genes.InitializerGene(0.001))
     else:
