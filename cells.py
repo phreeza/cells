@@ -72,13 +72,6 @@ try:
 except ImportError:
   pass
 
-def signum(x):
-  if x > 0:
-    return 1
-  if x < 0:
-    return -1
-  return 0
-
 
 class Game:
   def __init__(self):
@@ -149,8 +142,8 @@ class Game:
         a.y = y
 
   def get_next_move(self,old_x, old_y, x, y):
-    dx = signum(x - old_x)
-    dy = signum(y - old_y)
+    dx = numpy.sign(x - old_x)
+    dy = numpy.sign(y - old_y)
     return (old_x + dx, old_y + dy)
 
   def run_agents(self):
