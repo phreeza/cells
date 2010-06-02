@@ -232,13 +232,18 @@ class ObjectMapLayer(MapLayer):
 
   def get_small_view_fast(self, x, y):
     ret = []
+    get = self.get
+    append = ret.append
     for dx in (-1, 0, 1):
       for dy in (-1, 0, 1):
         if not (dx or dy):
           continue
-        a = self.get(x + dx, y + dy)
-        if a is not None:
-          ret.append(a.get_view())
+        try:
+          a = self.values[x + dx, y + dy]
+          if a is not None:
+            append(a.get_view())
+        except IndexError:
+          pass
     return ret
         
 
