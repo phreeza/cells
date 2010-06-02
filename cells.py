@@ -12,11 +12,13 @@
 # - response objects for outcome of action
 # - Desynchronize agents
 
-import sys
-import pygame
-import math
-import random,time
 import ConfigParser
+import math
+import random
+import sys
+import time
+
+import pygame
 
 mind1 = __import__(sys.argv[1])
 mind2 = __import__(sys.argv[2])
@@ -218,7 +220,7 @@ class ObjectMapLayer(MapLayer):
     for x_off in xrange(-r,r+1):
       for y_off in xrange(-r,r+1):
         if x_off == 0 and y_off == 0:
-          next
+          continue
         a = self.get(x + x_off, y + y_off)
         if a is not None:
           ret.append(a.get_view())
@@ -238,9 +240,9 @@ class Agent:
     self.team = team
     self.loaded = False
     if team == 0:
-     self.color = (255,0,0)
+      self.color = (255,0,0)
     else:
-     self.color = (0,0,255)
+      self.color = (0,0,255)
     self.act = self.mind.act
 
   def get_team(self):
