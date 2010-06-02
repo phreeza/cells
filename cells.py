@@ -36,7 +36,7 @@ mind_list = None
 
 TIMEOUT = None
 def main():
-    global bounds,symmetric, mind_list
+    global bounds, symmetric, mind_list
     try:
         config.read('default.cfg')
         bounds = config.getint('terrain', 'bounds')
@@ -63,7 +63,7 @@ def main():
     try:
         if len(sys.argv)>2:
             mind_list = [get_mind(n) for n in sys.argv[1:] ]
-    except (ImportError,IndexError):
+    except (ImportError, IndexError):
         pass
 
 
@@ -83,9 +83,9 @@ def signum(x):
 
 class Game:
     def __init__(self):
-        self.size = self.width,self.height = (bounds,bounds)
+        self.size = (self.width, self.height) = (bounds, bounds)
         self.messages = [MessageQueue() for x in mind_list]
-        self.disp = Display(self.size,scale=2)
+        self.disp = Display(self.size, scale=2)
         self.time = 0
         self.tic = time.time()
         self.terr = ScalarMapLayer(self.size)
@@ -97,10 +97,10 @@ class Game:
         self.energy_map = ScalarMapLayer(self.size)
         self.energy_map.set_random(10)
 
-        self.plant_map = ObjectMapLayer(self.size,None)
+        self.plant_map = ObjectMapLayer(self.size, None)
         self.plant_population = []
 
-        self.agent_map = ObjectMapLayer(self.size,None)
+        self.agent_map = ObjectMapLayer(self.size, None)
         self.agent_population = []
         self.winner = False
         if symmetric:
@@ -109,9 +109,9 @@ class Game:
             self.n_plants = 14
 
         for x in xrange(self.n_plants):
-            mx = random.randrange(1,self.width-1)
-            my = random.randrange(1,self.height-1)
-            eff = random.randrange(5,11)
+            mx = random.randrange(1, self.width - 1)
+            my = random.randrange(1, self.height - 1)
+            eff = random.randrange(5, 11)
             p = Plant(mx, my, eff)
             self.plant_population.append(p)
             if symmetric:
@@ -120,38 +120,40 @@ class Game:
         self.plant_map.insert(self.plant_population)
 
         for idx in xrange(len(self.minds)):
-            (mx,my) = self.plant_population[idx].get_pos()
-            fuzzed_x = mx + random.randrange(-1,2)
-            fuzzed_y = my + random.randrange(-1,2)
+            (mx, my) = self.plant_population[idx].get_pos()
+            fuzzed_x = mx + random.randrange(-1, 2)
+            fuzzed_y = my + random.randrange(-1, 2)
             self.agent_population.append(Agent(fuzzed_x, fuzzed_y, idx,
                                                self.minds[idx], None))
             self.agent_map.insert(self.agent_population)
 
     def run_plants(self):
         for p in self.plant_population:
-            (x,y) = p.get_pos()
-            for dx in (-1,0,1):
-                for dy in (-1,0,1):
-                    if self.energy_map.in_range(x+dx,y+dy):
-                        self.energy_map.change(x+dx,y+dy,p.get_eff())
+            (x, y) = p.get_pos()
+            for dx in (-1, 0, 1):
+                for dy in (-1, 0, 1):
+                    adj_x = x + dx
+                    adj_y = y + dy
+                    if self.energy_map.in_range(adj_x, adj_y):
+                        self.energy_map.change(adj_x, adj_y, p.get_eff())
 
-    def add_agent(self,a):
+    def add_agent(self, a):
         self.agent_population.append(a)
         self.agent_map.set(a.x, a.y, a)
 
-    def del_agent(self,a):
+    def del_agent(self, a):
         self.agent_population.remove(a)
         self.agent_map.set(a.x, a.y, None)
         a.alive = False
 
     def move_agent(self, a, x, y):
-        if (abs(self.terr.get(x,y)-self.terr.get(a.x,a.y))<=4):
+        if abs(self.terr.get(x, y)-self.terr.get(a.x, a.y)) <= 4:
             self.agent_map.set(a.x, a.y, None)
             self.agent_map.set(x, y, a)
             a.x = x
             a.y = y
 
-    def get_next_move(self,old_x, old_y, x, y):
+    def get_next_move(self, old_x, old_y, x, y):
         dx = signum(x - old_x)
         dy = signum(y - old_y)
         return (old_x + dx, old_y + dy)
@@ -172,15 +174,15 @@ class Game:
             agent_view = agent_map_get_small_view_fast(x, y)
             plant_view = plant_map_get_small_view_fast(x, y)
             world_view = WV(a, agent_view, plant_view, energy_map)
-            views_append((a,world_view))
+            views_append((a, world_view))
 
         #get actions
         messages = self.messages
-        actions = [(a, a.act(v, messages[a.team])) for (a,v) in views]
+        actions = [(a, a.act(v, messages[a.team])) for (a, v) in views]
         random.shuffle(actions)
 
         #apply agent actions
-        for (agent,action) in actions:
+        for (agent, action) in actions:
             agent.energy -= 1
 #      if agent.alive:
             if action.type == ACT_MOVE:
@@ -227,22 +229,22 @@ class Game:
 
         #let agents die if their energy is too low
         team = [0 for n in self.minds]
-        for (agent,action) in actions:
+        for (agent, action) in actions:
             if agent.energy < 0 and agent.alive:
                 self.energy_map.change(agent.x, agent.y, 25)
                 self.del_agent(agent)
             else :
                 team[agent.team] += 1
-        if (team[0] == 0) :
+        if not team[0]:
             print "Winner is blue in: " + str(self.time)
             self.winner = True
-        if (team[1] == 0) :
+        if not team[1]:
             print "Winner is red in: " + str(self.time)
             self.winner = True
 
     def tick(self):
         self.disp.update(self.terr, self.agent_population,
-                         self.plant_population,self.update_fields)
+                         self.plant_population, self.update_fields)
         self.disp.flip()
 
         # test for spacebar pressed - if yes, restart
@@ -263,29 +265,29 @@ class Game:
         self.tic = time.time()
 
 class MapLayer:
-    def __init__(self,size,val=0):
+    def __init__(self, size, val=0):
         self.size = self.width, self.height = size
         self.values = numpy.array([[val for x in xrange(self.width)]
                                    for y in xrange(self.height)],
                                   numpy.object_)
 
-    def get(self,x,y):
+    def get(self, x, y):
         if y >= 0 and x >= 0:
             try:
-                return self.values[x,y]
+                return self.values[x, y]
             except IndexError:
                 return None
         return None
 
     def set(self, x, y, val):
-        self.values[x,y] = val
+        self.values[x, y] = val
 
     def in_range(self, x, y):
         return (0 <= x < self.width and 0 <= y < self.height)
 
 
 class ScalarMapLayer(MapLayer):
-    def set_random(self,range):
+    def set_random(self, range):
         self.values = numpy.random.random_integers(0, range - 1,
                                                    (self.width, self.height))
 
@@ -321,8 +323,8 @@ class ObjectMapLayer(MapLayer):
 
     def get_view(self, x, y, r):
         ret = []
-        for x_off in xrange(-r,r+1):
-            for y_off in xrange(-r,r+1):
+        for x_off in xrange(-r, r + 1):
+            for y_off in xrange(-r, r + 1):
                 if x_off == 0 and y_off == 0:
                     continue
                 a = self.get(x + x_off, y + y_off)
@@ -345,7 +347,7 @@ class Agent:
         self.alive = True
         self.team = team
         self.loaded = False
-        colors = [(255,0,0),(0,0,255),(255,0,255),(255,255,0)]
+        colors = [(255, 0, 0), (0, 0, 255), (255, 0, 255), (255, 255, 0)]
         self.color = colors[team%len(colors)]
         self.act = self.mind.act
 
@@ -371,7 +373,7 @@ class Agent:
 ACT_SPAWN, ACT_MOVE, ACT_EAT, ACT_ATTACK, ACT_LIFT, ACT_DROP = range(6)
 
 class Action:
-    def __init__(self,type,data=None):
+    def __init__(self, type, data=None):
         self.type = type
         self.data = data
 
@@ -382,7 +384,7 @@ class Action:
         return self.type
 
 class PlantView:
-    def __init__(self,p):
+    def __init__(self, p):
         self.x = p.x
         self.y = p.y
         self.eff = p.get_eff()
@@ -394,7 +396,7 @@ class PlantView:
         return self.eff
 
 class AgentView:
-    def __init__(self,agent):
+    def __init__(self, agent):
         (self.x, self.y) = agent.get_pos()
         self.team = agent.get_team()
 
@@ -405,7 +407,7 @@ class AgentView:
         return self.team
 
 class WorldView:
-    def __init__(self,me,agent_views,plant_views,energy_map):
+    def __init__(self, me, agent_views, plant_views, energy_map):
         self.agent_views = agent_views
         self.plant_views = plant_views
         self.energy_map = energy_map
@@ -425,26 +427,26 @@ class WorldView:
 
 
 class Display:
-    black = 0, 0, 0
-    red = 255, 0, 0
-    green = 0, 255, 0
-    yellow = 255,255,0
+    black = (0, 0, 0)
+    red = (255, 0, 0)
+    green = (0, 255, 0)
+    yellow = (255, 255, 0)
 
-    def __init__(self,size,scale=5):
+    def __init__(self, size, scale=5):
         self.width, self.height = size
         self.scale = scale
-        self.size = (self.width*self.scale,self.height*self.scale)
+        self.size = (self.width * scale, self.height * scale)
         pygame.init()
         self.screen = pygame.display.set_mode(self.size)
 
-    def update(self,terr,pop,plants,upfields):
+    def update(self, terr, pop, plants, upfields):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 sys.exit()
 
         scale_tup = (self.scale, self.scale)
         for f in upfields:
-            (x,y)=f
+            (x, y)=f
             scaled_x = x * self.scale
             scaled_y = y * self.scale
             self.screen.fill((min(255, 20 * terr.get(x, y)),
@@ -453,12 +455,12 @@ class Display:
                              pygame.Rect((scaled_x, scaled_y),
                                          scale_tup))
         for a in pop:
-            (x,y)=a.get_pos()
+            (x, y) = a.get_pos()
             x *= self.scale
             y *= self.scale
             self.screen.fill(a.color, pygame.Rect((x, y), scale_tup))
         for a in plants:
-            (x,y)=a.get_pos()
+            (x, y) = a.get_pos()
             x *= self.scale
             y *= self.scale
             self.screen.fill(self.green, pygame.Rect((x, y), scale_tup))
@@ -491,14 +493,14 @@ class MessageQueue:
         self.__outlist = self.__inlist
         self.__inlist = []
 
-    def send_message(self,m):
+    def send_message(self, m):
         self.__inlist.append(m)
 
     def get_messages(self):
         return self.__outlist
 
 class Message:
-    def __init__(self,message):
+    def __init__(self, message):
         self.message = message
     def get_message(self):
         return self.message
