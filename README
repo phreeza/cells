@@ -4,13 +4,16 @@ For more information see: http://phonons.wordpress.com/2010/06/01/cells-a-massiv
 
 Requirements:
 pygame
+numpy
 
 Optional:
 psyco
 
 To run:
-python cells.py <program1> <program2> 
+python cells.py <program1> ... <programN> 
 
 For example:
 
-python cells.py samples.mind1 samples.mind2
+python cells.py mind1 mind2
+
+For available minds, look in the minds/ folder. Also place your custom minds there.

@@ -12,7 +12,7 @@ import random,cells
 ##2,3,5,7,11 are possible control vals
 
 class AgentMind:
-  def __init__(self):
+  def __init__(self,junk):
     self.my_plant = None
     self.mode = 1
     self.target_range = random.randrange(50,200)
@@ -78,25 +78,25 @@ class AgentMind:
     if self.mode == 5:
       dist = max(abs(mx-self.target[0]),abs(my-self.target[1]))
       self.target_range = max(dist,self.target_range)
-      if view.get_me().get_energy() > dist*1.5:
+      if view.get_me().energy > dist*1.5:
         self.mode = 6 
 
     if self.mode == 6:
       dist = max(abs(mx-self.target[0]),abs(my-self.target[1]))
       if dist > 4:
-        return cells.Action(cells.ActionType.MOVE,self.target)
+        return cells.Action(cells.ACT_MOVE,self.target)
       else:
         self.my_plant = None
         self.mode = 0
 
 
-    if (view.get_me().get_energy() < self.target_range) and (view.get_energy().get(mp) > 0):
+    if (view.get_me().energy < self.target_range) and (view.get_energy().get(mx,my) > 0):
       return self.Eat()
 
     #If I have a plant, move towards it if i need to.
     if self.my_plant:
       dist = max(abs(mx-self.my_plant.get_pos()[0]),abs(my-self.my_plant.get_pos()[1])) 
-      if view.get_me().get_energy() < dist*1.5:
+      if view.get_me().energy < dist*1.5:
         (mx,my) = self.my_plant.get_pos()
         return self.Move(mx,my)
       
@@ -108,16 +108,16 @@ class AgentMind:
     
 
   def Spawn(self,x,y):
-    return cells.Action(cells.ActionType.SPAWN,(x+random.randrange(-1,2),y+random.randrange(-1,2)))
+    return cells.Action(cells.ACT_SPAWN,(x+random.randrange(-1,2),y+random.randrange(-1,2)))
 
   def Move(self,x,y):
-    return cells.Action(cells.ActionType.MOVE,(x+random.randrange(-1,2),y+random.randrange(-1,2)))
+    return cells.Action(cells.ACT_MOVE,(x+random.randrange(-1,2),y+random.randrange(-1,2)))
 
   def Attack(self,a):
-    return cells.Action(cells.ActionType.ATTACK,a.get_pos())
+    return cells.Action(cells.ACT_ATTACK,a.get_pos())
 
   def Eat(self):
-    return cells.Action(cells.ActionType.EAT)
+    return cells.Action(cells.ACT_EAT)
     
   
   def GetID(self):
