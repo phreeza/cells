@@ -23,36 +23,48 @@ import numpy
 import pygame
 
 config = ConfigParser.RawConfigParser()
-try:
-    config.read('default.cfg')
-    bounds = config.getint('terrain', 'bounds')
-    mind1_str = config.get('minds', 'mind1')
-    mind1 = __import__(mind1_str)
-    mind2_str = config.get('minds', 'mind2')
-    mind2 = __import__(mind2_str)
 
-except:
-    config.add_section('minds')
-    config.set('minds', 'mind2', 'mind2')
-    config.set('minds', 'mind1', 'mind1')
-    config.add_section('terrain')
-    config.set('terrain', 'bounds', '300')
+def get_mind(name):
+    full_name = 'minds.' + name
+    __import__(full_name)
+    return sys.modules[full_name]
 
-    with open('default.cfg', 'wb') as configfile:
-        config.write(configfile)
+bounds = None  # HACK
+mind1 = None
+mind2 = None
 
-    config.read('default.cfg')
-    bounds = config.getint('terrain', 'bounds')
-
-# accept command line arguments for the minds over those in the config
-try:
-    mind1 = __import__(sys.argv[1])
+def main():
+    global bounds, mind1, mind2
     try:
-        mind2 = __import__(sys.argv[2])
+        config.read('default.cfg')
+        bounds = config.getint('terrain', 'bounds')
+        mind1 = get_mind(config.get('minds', 'mind1'))
+
+        mind2 = get_mind(config.get('minds', 'mind2'))
+
+    except Exception as e:
+        print 'Got error: %s' % e
+        config.add_section('minds')
+        config.set('minds', 'mind2', 'mind2')
+        config.set('minds', 'mind1', 'mind1')
+        config.add_section('terrain')
+        config.set('terrain', 'bounds', '300')
+
+        with open('default.cfg', 'wb') as configfile:
+            config.write(configfile)
+
+        config.read('default.cfg')
+        bounds = config.getint('terrain', 'bounds')
+
+    # accept command line arguments for the minds over those in the config
+    try:
+        mind1 = get_mind(sys.argv[1])
+        try:
+            mind2 = get_mind(sys.argv[2])
+        except ImportError:
+            pass
     except ImportError:
         pass
-except ImportError:
-    pass
 
 
 try:
@@ -471,6 +483,7 @@ class Message:
     return self.message
 
 if __name__ == "__main__":
+  main()
   while 1:
     game = Game()
     while not game.winner:
