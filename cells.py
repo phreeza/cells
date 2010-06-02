@@ -126,8 +126,8 @@ class Game:
     self.update_fields = []
     for a in self.agent_population:
       self.update_fields.append(a.get_pos())
-      agent_view = self.agent_map.get_view(a.x, a.y, 1)
-      plant_view = self.plant_map.get_view(a.x, a.y, 1)
+      agent_view = self.agent_map.get_small_view_fast(a.x, a.y)
+      plant_view = self.plant_map.get_small_view_fast(a.x, a.y)
       world_view = WorldView(a,agent_view,plant_view,self.energy_map)
       views.append((a,world_view))
     
@@ -219,7 +219,30 @@ class ScalarMapLayer(MapLayer):
 
 
 class ObjectMapLayer(MapLayer):
-  def old_get_view(self, x, y, r):
+#   def get_view(self, x, y, r):
+#     indices = [(j, k) for j in xrange(x-r, x+r+1) for k in xrange(y-r, y+r+1)
+#                if 0 <= j < self.width and 0 <= k < self.height and (j != x or k != y)]
+#     a = [j[0] for j in indices]
+#     b = [j[1] for j in indices]
+#     slc = self.values[a,b]
+#     slc = [a.get_view() for a in slc if a is not None]
+# #    old_way = self.old_get_view(x, y, r)
+# #    assert all(type(x) == type(y) for (x,y) in itertools.izip_longest(slc, old_way)), '%s; %s' % (slc, self.old_get_view(x,y,r))
+#     return slc
+
+  def get_small_view_fast(self, x, y):
+    ret = []
+    for dx in (-1, 0, 1):
+      for dy in (-1, 0, 1):
+        if not (dx or dy):
+          continue
+        a = self.get(x + dx, y + dy)
+        if a is not None:
+          ret.append(a.get_view())
+    return ret
+        
+
+  def get_view(self, x, y, r):
     ret = []
     for x_off in xrange(-r,r+1):
       for y_off in xrange(-r,r+1):
@@ -229,17 +252,6 @@ class ObjectMapLayer(MapLayer):
         if a is not None:
           ret.append(a.get_view())
     return ret
-
-  def get_view(self, x, y, r):
-    indices = [(j, k) for j in xrange(x-r, x+r+1) for k in xrange(y-r, y+r+1)
-               if 0 <= j < self.width and 0 <= k < self.height and (j != x or k != y)]
-    a = [j[0] for j in indices]
-    b = [j[1] for j in indices]
-    slc = self.values[a,b].ravel()
-    slc = [a.get_view() for a in slc if a is not None]
-#    old_way = self.old_get_view(x, y, r)
-#    assert all(type(x) == type(y) for (x,y) in itertools.izip_longest(slc, old_way)), '%s; %s' % (slc, self.old_get_view(x,y,r))
-    return slc
 
   def insert(self,list):
     for o in list:
