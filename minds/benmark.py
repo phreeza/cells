@@ -1,5 +1,6 @@
 #
 #  Benjamin C. Meyer
+#  Modified by markoconnor
 #
 #  Overall rules:
 #  Agents at plants reproduce as much as possible
