@@ -20,7 +20,7 @@ import sys
 import time
 
 import numpy
-import pygame
+import pygame, pygame.locals
 
 config = ConfigParser.RawConfigParser()
 
@@ -229,7 +229,12 @@ class Game:
   def tick(self):
     self.disp.update(self.terr,self.agent_population,self.plant_population,self.update_fields)
     self.disp.flip()
-
+    
+    # test for spacebar pressed - if yes, restart
+    for event in pygame.event.get():
+        if (event.type == pygame.locals.KEYUP and event.key == pygame.locals.K_SPACE):
+            self.winner = -1
+    
     self.run_agents() 
     self.run_plants() 
     for msg in self.messages:
