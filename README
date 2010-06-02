@@ -9,8 +9,10 @@ Optional:
 psyco
 
 To run:
-python cells.py <program1> <program2> 
+python cells.py <program1> ... <programN> 
 
 For example:
 
-python cells.py samples.mind1 samples.mind2
+python cells.py mind1 mind2
+
+For available minds, look in the minds/ folder. Also place your custom minds there.
