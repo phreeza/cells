@@ -60,7 +60,7 @@ class Game(object):
         self.tic = time.time()
         self.terr = ScalarMapLayer(self.size)
         self.terr.set_random(5)
-        self.minds = [m.AgentMind for m in mind_list]
+        self.minds = [m[1].AgentMind for m in mind_list]
 
         self.energy_map = ScalarMapLayer(self.size)
         self.energy_map.set_random(10)
@@ -440,8 +440,7 @@ class Display(object):
 
         scale = self.scale
         pygame.transform.scale(pygame.surfarray.make_surface(img),
-                               (self.width * scale, self.height * scale),
-                               self.screen)
+                               self.size, self.screen)
 
     def flip(self):
         pygame.display.flip()
@@ -513,7 +512,7 @@ def main():
     # accept command line arguments for the minds over those in the config
     try:
         if len(sys.argv)>2:
-            mind_list = [get_mind(n) for n in sys.argv[1:] ]
+            mind_list = [(n, get_mind(n)) for n in sys.argv[1:] ]
     except (ImportError, IndexError):
         pass
 
