@@ -24,7 +24,11 @@ import numpy
 import pygame, pygame.locals
 
 
-config = ConfigParser.RawConfigParser()
+try:
+    import psyco
+    psyco.full()
+except ImportError:
+    pass
 
 
 def get_mind(name):
@@ -36,44 +40,8 @@ def get_mind(name):
 TIMEOUT = None
 
 
-def main():
-    global bounds, symmetric, mind_list
-    
-    try:
-        config.read('default.cfg')
-        bounds = config.getint('terrain', 'bounds')
-        symmetric = config.getboolean('terrain', 'symmetric')
-        minds_str = str(config.get('minds', 'minds'))
-        mind_list = [get_mind(n) for n in minds_str.split(',')]
-    except Exception as e:
-        print 'Got error: %s' % e
-        config.add_section('minds')
-        config.set('minds', 'minds', 'mind1,mind2')
-        config.add_section('terrain')
-        config.set('terrain', 'bounds', '300')
-        config.set('terrain', 'symmetric', 'true')
+config = ConfigParser.RawConfigParser()
 
-        with open('default.cfg', 'wb') as configfile:
-            config.write(configfile)
-
-        config.read('default.cfg')
-        bounds = config.getint('terrain', 'bounds')
-        symmetric = config.getboolean('terrain', 'symmetric')
-
-    # accept command line arguments for the minds over those in the config
-    try:
-        if len(sys.argv)>2:
-            mind_list = [get_mind(n) for n in sys.argv[1:] ]
-    except (ImportError, IndexError):
-        pass
-
-
-try:
-    import psyco
-    psyco.full()
-except ImportError:
-    pass
-    
 
 def signum(x):
     if x > 0:
@@ -81,6 +49,12 @@ def signum(x):
     if x < 0:
         return -1
     return 0
+
+
+def get_next_move(self, old_x, old_y, x, y):
+    dx = signum(x - old_x)
+    dy = signum(y - old_y)
+    return (old_x + dx, old_y + dy)
 
 
 class Game(object):
@@ -156,11 +130,6 @@ class Game(object):
             a.x = x
             a.y = y
 
-    def get_next_move(self, old_x, old_y, x, y):
-        dx = signum(x - old_x)
-        dy = signum(y - old_y)
-        return (old_x + dx, old_y + dy)
-
     def run_agents(self):
         views = []
         self.update_fields = []
@@ -190,15 +159,15 @@ class Game(object):
 #      if agent.alive:
             if action.type == ACT_MOVE:
                 act_x, act_y = action.get_data()
-                (new_x, new_y) = self.get_next_move(agent.x, agent.y,
-                                                    act_x, act_y)
+                (new_x, new_y) = get_next_move(agent.x, agent.y,
+                                               act_x, act_y)
                 if (self.agent_map.in_range(new_x, new_y) and
                     not self.agent_map.get(new_x, new_y)):
                     self.move_agent(agent, new_x, new_y)
             elif action.type == ACT_SPAWN:
                 act_x, act_y = action.get_data()[:2]
-                (new_x, new_y) = self.get_next_move(agent.x, agent.y,
-                                                    act_x, act_y)
+                (new_x, new_y) = get_next_move(agent.x, agent.y,
+                                               act_x, act_y)
                 if (self.agent_map.in_range(new_x, new_y) and
                     not self.agent_map.get(new_x, new_y) and
                     agent.energy >= 50):
@@ -213,7 +182,7 @@ class Game(object):
                 self.energy_map.change(agent.x, agent.y, -intake)
             elif action.type == ACT_ATTACK:
                 act_x, act_y = act_data = action.get_data()
-                next_pos = self.get_next_move(agent.x, agent.y, act_x, act_y)
+                next_pos = get_next_move(agent.x, agent.y, act_x, act_y)
                 new_x, new_y = next_pos
                 victim = self.agent_map.get(act_x, act_y)
                 if (victim is not None and next_pos == act_data and
@@ -520,6 +489,38 @@ class Message(object):
         self.message = message
     def get_message(self):
         return self.message
+
+
+def main():
+    global bounds, symmetric, mind_list
+    
+    try:
+        config.read('default.cfg')
+        bounds = config.getint('terrain', 'bounds')
+        symmetric = config.getboolean('terrain', 'symmetric')
+        minds_str = str(config.get('minds', 'minds'))
+        mind_list = [get_mind(n) for n in minds_str.split(',')]
+    except Exception as e:
+        print 'Got error: %s' % e
+        config.add_section('minds')
+        config.set('minds', 'minds', 'mind1,mind2')
+        config.add_section('terrain')
+        config.set('terrain', 'bounds', '300')
+        config.set('terrain', 'symmetric', 'true')
+
+        with open('default.cfg', 'wb') as configfile:
+            config.write(configfile)
+
+        config.read('default.cfg')
+        bounds = config.getint('terrain', 'bounds')
+        symmetric = config.getboolean('terrain', 'symmetric')
+
+    # accept command line arguments for the minds over those in the config
+    try:
+        if len(sys.argv)>2:
+            mind_list = [get_mind(n) for n in sys.argv[1:] ]
+    except (ImportError, IndexError):
+        pass
 
 
 if __name__ == "__main__":
