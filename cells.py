@@ -87,7 +87,7 @@ class Game:
     def __init__(self, bounds, mind_list, symmetric, max_time):
         self.size = self.width, self.height = (bounds, bounds)
         self.messages = [MessageQueue() for x in mind_list]
-        self.disp = Display(self.size,scale=2)
+        self.disp = Display(self.size, scale=2)
         self.time = 0
         self.max_time = max_time
         self.tic = time.time()
@@ -466,7 +466,8 @@ class Display:
                 min(255, 20 * terr.get(x, y)), 
                 min(255, 10 * terr.get(x, y)),
                 0)
-            self.screen.fill(color, pygame.Rect((scaled_x, scaled_y), scale_tup))
+            self.screen.fill(color,
+                             pygame.Rect((scaled_x, scaled_y), scale_tup))
         for a in pop:
             (x, y) = a.get_pos()
             x *= self.scale
