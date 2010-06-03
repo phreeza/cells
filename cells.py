@@ -364,7 +364,7 @@ class Agent(object):
         self.alive = True
         self.team = team
         self.loaded = False
-        colors = [(255, 0, 0), (0, 0, 255), (255, 0, 255), (255, 255, 0)]
+        colors = [(255, 0, 0), (255, 255, 255), (255, 0, 255), (255, 255, 0)]
         self.color = colors[team % len(colors)]
         self.act = self.mind.act
 
