@@ -53,7 +53,7 @@ class Game(object):
         self.tic = time.time()
         self.terr = ScalarMapLayer(self.size)
         self.terr.set_random(5)
-        self.minds = [m.AgentMind for m in mind_list]
+        self.minds = [m[1].AgentMind for m in mind_list]
 
         self.energy_map = ScalarMapLayer(self.size)
         self.energy_map.set_random(10)
@@ -208,7 +208,7 @@ class Game(object):
         self.disp.update(self.terr, self.agent_population,
                          self.plant_population, self.energy_map)
         self.disp.flip()
-
+        
         # test for spacebar pressed - if yes, restart
         for event in pygame.event.get():
             if (event.type == pygame.locals.KEYUP and
@@ -412,7 +412,7 @@ class Display(object):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 sys.exit()
-
+        
         limit = 150 * numpy.ones_like(terr.values)
 
         r = numpy.minimum(limit, 20 * terr.values)
@@ -497,7 +497,7 @@ def main():
         bounds = config.getint('terrain', 'bounds')
         symmetric = config.getboolean('terrain', 'symmetric')
         minds_str = str(config.get('minds', 'minds'))
-    mind_list = [get_mind(n) for n in minds_str.split(',')]
+    mind_list = [(n, get_mind(n)) for n in minds_str.split(',')]
 
     # accept command line arguments for the minds over those in the config
     try:

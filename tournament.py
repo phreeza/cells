@@ -24,7 +24,6 @@ def main():
         bounds = config.getint('terrain', 'bounds')
         symmetric = config.getboolean('terrain', 'symmetric')
         minds_str = str(config.get('minds', 'minds'))
-        mind_list = [get_mind(n) for n in minds_str.split(',')]
 
     except Exception as e:
         print 'Got error: %s' % e
@@ -40,6 +39,8 @@ def main():
         config.read('tournament.cfg')
         bounds = config.getint('terrain', 'bounds')
         symmetric = config.getboolean('terrain', 'symmetric')
+        minds_str = str(config.get('minds', 'minds'))
+    mind_list = [(n,get_mind(n)) for n in minds_str.split(',')]
 
     # accept command line arguments for the minds over those in the config
     try:
