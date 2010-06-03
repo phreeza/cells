@@ -11,7 +11,7 @@ import random,cells
 ##object_type=3 : enemy
 ##2,3,5,7,11 are possible control vals
 
-class AgentMind:
+class AgentMind(object):
     def __init__(self,junk):
         self.my_plant = None
         self.mode = 1

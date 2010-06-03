@@ -33,30 +33,33 @@ def signum(x):
     return 0
 
 
-class MessageType:
+class MessageType(object):
     ATTACK = 0
 
-class AgentMind:
+class AgentMind(object):
     def __init__(self, args):
         # The direction to walk in
         self.x = None
-        # Don't come to the rescue, continue looking for plants & bad guys
-        self.scout = (random.random() > 0.9)
         # Once we are attacked (mainly) those reproducing at plants should eat up a defense
         self.defense = 0
         # Don't have everyone walk on the same line to 1) eat as they walk and 2) find still hidden plants easier
         self.step = 0
         # reproduce for at least X children at a plant before going out and attacking
-        self.children = 0
         self.my_plant = None
         self.bumps = 0
         self.last_pos = (-1, -1)
 
         if args is None:
             self.strain = 0
+            self.scout = False
         else:
             parent = args[0]
             self.strain = parent.strain
+            # Don't come to the rescue, continue looking for plants & bad guys
+            if parent.my_plant:
+                self.scout = (random.random() > 0.9)
+            else:
+                self.scout = False
 
 
     def get_available_space_grid(self, me, view):
@@ -105,17 +108,16 @@ class AgentMind:
         for a in view.get_agents():
             if (a.get_team() != me.get_team()):
                 msg.send_message((self.strain, MessageType.ATTACK, mx,my))
-                if (me.energy > 2000) :
-                    spawn_x, spawn_y = self.smart_spawn(me, view)
-                    return cells.Action(cells.ACT_SPAWN, (me.x + spawn_x, me.y + spawn_y, self))
                 return cells.Action(cells.ACT_ATTACK, a.get_pos())
 
-        # Eat any energy I find until I am 'full'
-        if (view.get_energy().get(mx, my) > 0) :
-            if (me.energy < 50) :
+        # Eat any energy I find until I am 'full'. The cost of eating
+        # is 1, so don't eat just 1 energy.
+        if view.get_energy().get(mx, my) > 1:
+            if (me.energy <= 50):
                 return cells.Action(cells.ACT_EAT)
             if (me.energy < self.defense and (random.random()>0.3)):
                 return cells.Action(cells.ACT_EAT)
+
 
         # If there is a plant near by go to it and spawn all I can
         if self.my_plant is None :
@@ -124,12 +126,22 @@ class AgentMind:
                 self.my_plant = plants[0]
                 self.x = self.y = 0
                 self.strain = self.my_plant.x * 41 + self.my_plant.y
-        if self.my_plant:
+
+        # Current rules don't make carrying around excess energy
+        # worthwhile.  Generates a very nice "They eat their
+        # wounded?!" effect. Also burns extra energy so the enemy
+        # can't use it.
+        # Spawning takes 25 of the energy and gives it
+        # to the child and reserves the other 25 for the child's death
+        # drop. In addition, the action costs 1 unit. Therefore, we
+        # can't create energy by spawning...
+        if me.energy >= 51:
             spawn_x, spawn_y = self.smart_spawn(me, view)
-            return cells.Action(cells.ACT_SPAWN, (me.x + spawn_x, me.y + spawn_y, self))
+            return cells.Action(cells.ACT_SPAWN,
+                                (me.x + spawn_x, me.y + spawn_y, self))
 
         # If I get the message of help go and rescue!
-        if (self.step == 0 and not self.scout and (random.random()>0.2)) :
+        if not self.step and not self.scout and random.random() > 0.1:
             ax = 0;
             ay = 0;
             best = 500;
@@ -144,11 +156,11 @@ class AgentMind:
                         ax = ox
                         ay = oy
                         best = dist
-            if (ax != 0 and ay != 0) :
+            if ax and ay:
                 self.defense = 200
                 dir = ax-mx + (ay - my) * 1j
                 r, theta = cmath.polar(dir)
-                theta += 0.1 * random.random() - 0.5
+                theta += 0.02 * random.random() - 0.5
                 dir =  cmath.rect(r, theta)
                 self.x = dir.real
                 self.y = dir.imag
@@ -176,10 +188,8 @@ class AgentMind:
         if (my == 0 or my == map_size-1) :
             self.y = random.randrange(-1,2)
 
-        # Back to step 0 we can change direction at the next attack
-        if (self.step > 0):
-            self.step -= 1;
+        # Back to step 0 we can change direction at the next attack.
+        if self.step:
+            self.step -= 1
 
-        # Move quickly randomly in my birth direction
         return cells.Action(cells.ACT_MOVE,(mx+self.x,my+self.y))
-#    return cells.Action(cells.ACT_MOVE,(mx+self.x+random.randrange(-1,2),my+self.y+random.randrange(-1,2)))

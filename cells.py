@@ -14,8 +14,6 @@
 # - Desynchronize agents
 
 import ConfigParser
-import itertools
-import math
 import random
 import sys
 import time
@@ -24,7 +22,11 @@ import numpy
 import pygame, pygame.locals
 
 
-config = ConfigParser.RawConfigParser()
+try:
+    import psyco
+    psyco.full()
+except ImportError:
+    pass
 
 
 def get_mind(name):
@@ -36,54 +38,24 @@ def get_mind(name):
 TIMEOUT = None
 
 
-def main():
-    global bounds, symmetric, mind_list
-    
-    try:
-        config.read('default.cfg')
-        bounds = config.getint('terrain', 'bounds')
-        symmetric = config.getboolean('terrain', 'symmetric')
-        minds_str = str(config.get('minds', 'minds'))
-        mind_list = [get_mind(n) for n in minds_str.split(',')]
-    except Exception as e:
-        print 'Got error: %s' % e
-        config.add_section('minds')
-        config.set('minds', 'minds', 'mind1,mind2')
-        config.add_section('terrain')
-        config.set('terrain', 'bounds', '300')
-        config.set('terrain', 'symmetric', 'true')
+config = ConfigParser.RawConfigParser()
 
-        with open('default.cfg', 'wb') as configfile:
-            config.write(configfile)
-
-        config.read('default.cfg')
-        bounds = config.getint('terrain', 'bounds')
-        symmetric = config.getboolean('terrain', 'symmetric')
-
-    # accept command line arguments for the minds over those in the config
-    try:
-        if len(sys.argv)>2:
-            mind_list = [get_mind(n) for n in sys.argv[1:] ]
-    except (ImportError, IndexError):
-        pass
-
-
-try:
-    import psyco
-    psyco.full()
-except ImportError:
-    pass
-    
 
 def signum(x):
     return cmp(x, 0)
 
 
-class Game:
+def get_next_move(old_x, old_y, x, y):
+    dx = signum(x - old_x)
+    dy = signum(y - old_y)
+    return (old_x + dx, old_y + dy)
+
+
+class Game(object):
     def __init__(self, bounds, mind_list, symmetric, max_time):
         self.size = self.width, self.height = (bounds, bounds)
         self.messages = [MessageQueue() for x in mind_list]
-        self.disp = Display(self.size,scale=2)
+        self.disp = Display(self.size, scale=2)
         self.time = 0
         self.max_time = max_time
         self.tic = time.time()
@@ -152,11 +124,6 @@ class Game:
             a.x = x
             a.y = y
 
-    def get_next_move(self, old_x, old_y, x, y):
-        dx = signum(x - old_x)
-        dy = signum(y - old_y)
-        return (old_x + dx, old_y + dy)
-
     def run_agents(self):
         views = []
         self.update_fields = []
@@ -186,15 +153,15 @@ class Game:
 #      if agent.alive:
             if action.type == ACT_MOVE:
                 act_x, act_y = action.get_data()
-                (new_x, new_y) = self.get_next_move(agent.x, agent.y,
-                                                    act_x, act_y)
+                (new_x, new_y) = get_next_move(agent.x, agent.y,
+                                               act_x, act_y)
                 if (self.agent_map.in_range(new_x, new_y) and
                     not self.agent_map.get(new_x, new_y)):
                     self.move_agent(agent, new_x, new_y)
             elif action.type == ACT_SPAWN:
                 act_x, act_y = action.get_data()[:2]
-                (new_x, new_y) = self.get_next_move(agent.x, agent.y,
-                                                    act_x, act_y)
+                (new_x, new_y) = get_next_move(agent.x, agent.y,
+                                               act_x, act_y)
                 if (self.agent_map.in_range(new_x, new_y) and
                     not self.agent_map.get(new_x, new_y) and
                     agent.energy >= 50):
@@ -209,7 +176,7 @@ class Game:
                 self.energy_map.change(agent.x, agent.y, -intake)
             elif action.type == ACT_ATTACK:
                 act_x, act_y = act_data = action.get_data()
-                next_pos = self.get_next_move(agent.x, agent.y, act_x, act_y)
+                next_pos = get_next_move(agent.x, agent.y, act_x, act_y)
                 new_x, new_y = next_pos
                 victim = self.agent_map.get(act_x, act_y)
                 if (victim is not None and next_pos == act_data and
@@ -268,7 +235,7 @@ class Game:
         self.tic = time.time()
 
 
-class MapLayer:
+class MapLayer(object):
     def __init__(self, size, val=0):
         self.size = self.width, self.height = size
         array_data = [[val for x in xrange(self.width)]
@@ -338,9 +305,19 @@ class ObjectMapLayer(MapLayer):
     def insert(self, list):
         for o in list:
             self.set(o.x, o.y, o)
-            
 
-class Agent:
+# Use Cython version of get_small_view_fast if available.
+# Otherwise, don't bother folks about it.
+try:
+    import cells_helpers
+    import types
+    ObjectMapLayer.get_small_view_fast = types.MethodType(
+        cells_helpers.get_small_view_fast, None, ObjectMapLayer)
+except ImportError:
+    pass
+
+
+class Agent(object):
     __slots__ = ['x', 'y', 'mind', 'energy', 'alive', 'team', 'loaded', 'color',
                  'act']
     def __init__(self, x, y, team, AgentMind, cargs):
@@ -372,7 +349,7 @@ class Agent:
 ACT_SPAWN, ACT_MOVE, ACT_EAT, ACT_ATTACK, ACT_LIFT, ACT_DROP = range(6)
 
 
-class Action:
+class Action(object):
     '''
     A class for passing an action around.
     '''
@@ -387,7 +364,7 @@ class Action:
         return self.type
 
 
-class PlantView:
+class PlantView(object):
     def __init__(self, p):
         self.x = p.x
         self.y = p.y
@@ -400,7 +377,7 @@ class PlantView:
         return self.eff
 
 
-class AgentView:
+class AgentView(object):
     def __init__(self, agent):
         (self.x, self.y) = agent.get_pos()
         self.team = agent.get_team()
@@ -412,7 +389,7 @@ class AgentView:
         return self.team
 
 
-class WorldView:
+class WorldView(object):
     def __init__(self, me, agent_views, plant_views, energy_map):
         self.agent_views = agent_views
         self.plant_views = plant_views
@@ -432,7 +409,7 @@ class WorldView:
         return self.energy_map
 
 
-class Display:
+class Display(object):
     black = (0, 0, 0)
     red = (255, 0, 0)
     green = (0, 255, 0)
@@ -450,32 +427,33 @@ class Display:
             if event.type == pygame.QUIT:
                 sys.exit()
 
-        scale_tup = (self.scale, self.scale)
+        scale = self.scale
+        scale_tup = (scale, scale)
+        Rect = pygame.Rect
+        fill = self.screen.fill
         for f in upfields:
             (x, y) = f
-            scaled_x = x * self.scale
-            scaled_y = y * self.scale
+            scaled_x = x * scale
+            scaled_y = y * scale
             color = (
                 min(255, 20 * terr.get(x, y)), 
                 min(255, 10 * terr.get(x, y)),
                 0)
-            self.screen.fill(color, pygame.Rect((scaled_x, scaled_y), scale_tup))
+            fill(color, Rect((scaled_x, scaled_y), scale_tup))
         for a in pop:
-            (x, y) = a.get_pos()
-            x *= self.scale
-            y *= self.scale
-            self.screen.fill(a.color, pygame.Rect((x, y), scale_tup))
+            x = a.x * scale
+            y = a.y * scale
+            fill(a.color, Rect((x, y), scale_tup))
         for a in plants:
-            (x, y) = a.get_pos()
-            x *= self.scale
-            y *= self.scale
-            self.screen.fill(self.green, pygame.Rect((x, y), scale_tup))
+            x = a.x * scale
+            y = a.y * scale
+            fill(self.green, Rect((x, y), scale_tup))
 
     def flip(self):
         pygame.display.flip()
 
 
-class Plant:
+class Plant(object):
     def __init__(self, x, y, eff):
         self.x = x
         self.y = y
@@ -491,7 +469,7 @@ class Plant:
         return PlantView(self)
 
 
-class MessageQueue:
+class MessageQueue(object):
     def __init__(self):
         self.__inlist = []
         self.__outlist = []
@@ -507,11 +485,43 @@ class MessageQueue:
         return self.__outlist
 
 
-class Message:
+class Message(object):
     def __init__(self, message):
         self.message = message
     def get_message(self):
         return self.message
+
+
+def main():
+    global bounds, symmetric, mind_list
+    
+    try:
+        config.read('default.cfg')
+        bounds = config.getint('terrain', 'bounds')
+        symmetric = config.getboolean('terrain', 'symmetric')
+        minds_str = str(config.get('minds', 'minds'))
+        mind_list = [get_mind(n) for n in minds_str.split(',')]
+    except Exception as e:
+        print 'Got error: %s' % e
+        config.add_section('minds')
+        config.set('minds', 'minds', 'mind1,mind2')
+        config.add_section('terrain')
+        config.set('terrain', 'bounds', '300')
+        config.set('terrain', 'symmetric', 'true')
+
+        with open('default.cfg', 'wb') as configfile:
+            config.write(configfile)
+
+        config.read('default.cfg')
+        bounds = config.getint('terrain', 'bounds')
+        symmetric = config.getboolean('terrain', 'symmetric')
+
+    # accept command line arguments for the minds over those in the config
+    try:
+        if len(sys.argv)>2:
+            mind_list = [get_mind(n) for n in sys.argv[1:] ]
+    except (ImportError, IndexError):
+        pass
 
 
 if __name__ == "__main__":
