@@ -18,6 +18,7 @@
 #
 
 import random, cells
+import numpy
 
 class MessageType(object):
     ATTACK = 0
@@ -36,6 +37,22 @@ class AgentMind(object):
         self.children = 0
         self.my_plant = None
         pass
+    def get_available_space_grid(self, me, view):
+        grid = numpy.ones((3,3))
+        for agent in view.get_agents():
+            grid[agent.x - me.x + 1, agent.y - me.y + 1] = 0
+        for plant in view.get_plants():
+            grid[plant.x - me.x + 1, plant.y - me.y + 1] = 0
+        grid[1,1] = 0
+        return grid
+
+    def smart_spawn(self, me, view):
+        grid = self.get_available_space_grid(me, view)
+        for x in xrange(3):
+            for y in range(3):
+                if grid[x,y]:
+                    return (x-1, y-1)
+        return (-1, -1)
 
     def choose_new_direction(self, view) :
         me = view.get_me()
@@ -56,7 +73,8 @@ class AgentMind(object):
             if (a.get_team() != me.get_team()):
                 msg.send_message((MessageType.ATTACK, mx,my))
                 if (me.energy > 2000) :
-                    return cells.Action(cells.ACT_SPAWN,(mx+random.randrange(-5,5),my+random.randrange(-5,5), self))
+                    spawn_x, spawn_y = self.smart_spawn(me, view)
+                    return cells.Action(cells.ACT_SPAWN,(mx+spawn_x, my+spawn_y, self))
                 return cells.Action(cells.ACT_ATTACK, a.get_pos())
 
         # Eat any energy I find until I am 'full'
@@ -73,7 +91,8 @@ class AgentMind(object):
                 self.my_plant = plants[0];
         if (self.my_plant and (self.children < 50 or random.random()>0.9)):
             self.children += 1;
-            return cells.Action(cells.ACT_SPAWN,(mx+random.randrange(-5,5),my+random.randrange(-5,5), self))
+            spawn_x, spawn_y = self.smart_spawn(me, view)
+            return cells.Action(cells.ACT_SPAWN,(mx + spawn_x, my + spawn_y, self))
 
         # If I get the message of help go and rescue!
         map_size = view.energy_map.width
