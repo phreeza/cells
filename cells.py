@@ -14,8 +14,6 @@
 # - Desynchronize agents
 
 import ConfigParser
-import itertools
-import math
 import random
 import sys
 import time
