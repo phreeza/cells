@@ -338,9 +338,6 @@ class Agent(object):
         self.x = x
         self.y = y
 
-    def get_team(self):
-        return self.team
-
     def get_view(self):
         return AgentView(self)
 
