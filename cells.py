@@ -1,17 +1,10 @@
 #!/usr/bin/env python
 #TODO:
-# - Make terrain work
-# - Make ScalarView
 # - Add more actions: PASS, LIFT, DROP,etc...
-# - derive SelfView with more info than the general AgentView
-# - render terrain and energy landscapes
 # - fractal terrain generation
-# - make rendering "smart"(and/or openGL)
 # - Split into several files.
-# - Messaging system
 # - limit frame rate
 # - response objects for outcome of action
-# - Desynchronize agents
 
 import ConfigParser
 import random
@@ -60,7 +53,7 @@ class Game(object):
         self.tic = time.time()
         self.terr = ScalarMapLayer(self.size)
         self.terr.set_random(5)
-        self.minds = [m[1].AgentMind for m in mind_list]
+        self.minds = [m.AgentMind for m in mind_list]
 
         self.energy_map = ScalarMapLayer(self.size)
         self.energy_map.set_random(10)
