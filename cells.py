@@ -31,12 +31,11 @@ def get_mind(name):
     return mind
 
 
-
 STARTING_ENERGY = 25
 
-ATTACK_POWER = 50
-DEATH_DROP   = 10
-ENERGY_CAP   = 9999
+ATTACK_POWER = 20
+DEATH_DROP   = 25
+ENERGY_CAP   = 500
 
 SPAWN_MIN_ENERGY = 50
 SPAWN_COST       = 20
@@ -331,7 +330,7 @@ class Agent(object):
     def attack(self, other):
         if not other:
             return False
-        other.energy -= min(self.energy, ATTACK_POWER)
+        other.energy -= ATTACK_POWER
         return other.energy <= 0
 
     def get_team(self):
