@@ -435,8 +435,9 @@ class Display(object):
         for a in plants:
             img[a.get_pos()] = self.green
 
+        scale = self.scale
         pygame.transform.scale(pygame.surfarray.make_surface(img),
-                               (self.width * self.scale, self.height * self.scale),
+                               (self.width * scale, self.height * scale),
                                self.screen)
 
     def flip(self):
