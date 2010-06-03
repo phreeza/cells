@@ -37,8 +37,17 @@ ATTACK_POWER = 20
 DEATH_DROP   = 25
 ENERGY_CAP   = 500
 
-SPAWN_MIN_ENERGY = 50
 SPAWN_COST       = 20
+
+# This must be a function of DEATH_DROP and SPAWN_COST. Why?
+# Consider a cell with SPAWN_MIN_ENERGY that spawns.
+# It creates two cells, each with (SPAWN_MIN_ENERGY - SPAWN_COST) / 2 energy,
+# that will yield DEATH_DROP energy when killed.
+# If (SPAWN_MIN_ENERGY - SPAWN_COST) / 2 < DEATH_DROP, energy is created, so
+# we need SPAWN_MIN_ENERGY - SPAWN_COST) / 2 >= DEATH_DROP, or
+# SPAWN_MIN_ENERGY >= 2 * DEATH_DROP + SPAWN_COST.
+SPAWN_MIN_ENERGY = 2 * DEATH_DROP + SPAWN_COST
+
 
 TIMEOUT = None
 
