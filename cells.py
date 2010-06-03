@@ -51,7 +51,7 @@ def signum(x):
     return 0
 
 
-def get_next_move(self, old_x, old_y, x, y):
+def get_next_move(old_x, old_y, x, y):
     dx = signum(x - old_x)
     dy = signum(y - old_y)
     return (old_x + dx, old_y + dy)
