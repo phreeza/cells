@@ -57,7 +57,7 @@ class Game(object):
         self.tic = time.time()
         self.terr = ScalarMapLayer(self.size)
         self.terr.set_random(5)
-        self.minds = [m.AgentMind for m in mind_list]
+        self.minds = [m[1].AgentMind for m in mind_list]
 
         self.energy_map = ScalarMapLayer(self.size)
         self.energy_map.set_random(10)
@@ -197,10 +197,10 @@ class Game(object):
                 team[agent.team] += 1
         
         if not team[0]:
-            print "Winner is blue in: " + str(self.time)
+            print "Winner is "+ (mind_list[1])[0] +" (blue) in: " + str(self.time)
             self.winner = 0
         if not team[1]:
-            print "Winner is red in: " + str(self.time)
+            print "Winner is "+ (mind_list[0])[0] +"(red) in: " + str(self.time)
             self.winner = 1
         if self.max_time > 0 and self.time > self.max_time:
             print "It's a draw!"
@@ -506,7 +506,7 @@ def main():
     # accept command line arguments for the minds over those in the config
     try:
         if len(sys.argv)>2:
-            mind_list = [get_mind(n) for n in sys.argv[1:] ]
+            mind_list = [(n, get_mind(n)) for n in sys.argv[1:] ]
     except (ImportError, IndexError):
         pass
 

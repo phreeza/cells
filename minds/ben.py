@@ -1,5 +1,5 @@
 #
-#  Benjamin C. Meyer
+#  Benjamin C. Meyer <ben@meyerhome.net>
 #
 #  Overall rules:
 #  Agents at plants reproduce as much as possible
@@ -18,6 +18,7 @@
 #
 
 import random, cells
+import numpy
 
 class MessageType(object):
     ATTACK = 0
@@ -25,8 +26,7 @@ class MessageType(object):
 class AgentMind(object):
     def __init__(self, args):
         # The direction to walk in
-        self.x = random.randrange(-3,3)
-        self.y = random.randrange(-3,3)
+        self.x = False
         # Don't come to the rescue, continue looking for plants & bad guys
         self.scout = (random.random() > 0.9)
         # Once we are attacked (mainly) those reproducing at plants should eat up a defense
@@ -37,8 +37,34 @@ class AgentMind(object):
         self.children = 0
         self.my_plant = None
         pass
+    def get_available_space_grid(self, me, view):
+        grid = numpy.ones((3,3))
+        for agent in view.get_agents():
+            grid[agent.x - me.x + 1, agent.y - me.y + 1] = 0
+        for plant in view.get_plants():
+            grid[plant.x - me.x + 1, plant.y - me.y + 1] = 0
+        grid[1,1] = 0
+        return grid
+
+    def smart_spawn(self, me, view):
+        grid = self.get_available_space_grid(me, view)
+        for x in xrange(3):
+            for y in range(3):
+                if grid[x,y]:
+                    return (x-1, y-1)
+        return (-1, -1)
+
+    def choose_new_direction(self, view) :
+        me = view.get_me()
+        self.x = random.randrange(view.energy_map.width) - me.x
+        self.y = random.randrange(view.energy_map.height) - me.y
+        #self.x = random.randrange(-2, 2)
+        #self.y = random.randrange(-2, 2)
 
     def act(self, view, msg):
+        if not self.x:
+            self.choose_new_direction(view)
+
         me = view.get_me()
         my_pos = (mx,my) = me.get_pos()
 
@@ -47,7 +73,8 @@ class AgentMind(object):
             if (a.get_team() != me.get_team()):
                 msg.send_message((MessageType.ATTACK, mx,my))
                 if (me.energy > 2000) :
-                    return cells.Action(cells.ACT_SPAWN,(mx+random.randrange(-5,5),my+random.randrange(-5,5), self))
+                    spawn_x, spawn_y = self.smart_spawn(me, view)
+                    return cells.Action(cells.ACT_SPAWN,(mx+spawn_x, my+spawn_y, self))
                 return cells.Action(cells.ACT_ATTACK, a.get_pos())
 
         # Eat any energy I find until I am 'full'
@@ -57,6 +84,10 @@ class AgentMind(object):
             if (me.energy < self.defense and (random.random()>0.3)):
                 return cells.Action(cells.ACT_EAT)
 
+        if (self.scout and me.energy > 1000 and random.random()>0.5):
+            spawn_x, spawn_y = self.smart_spawn(me, view)
+            return cells.Action(cells.ACT_SPAWN,(mx + spawn_x, my + spawn_y, self))
+
         # If there is a plant near by go to it and spawn all I can
         if (not self.my_plant) :
             plants = view.get_plants()
@@ -64,13 +95,15 @@ class AgentMind(object):
                 self.my_plant = plants[0];
         if (self.my_plant and (self.children < 50 or random.random()>0.9)):
             self.children += 1;
-            return cells.Action(cells.ACT_SPAWN,(mx+random.randrange(-5,5),my+random.randrange(-5,5), self))
+            spawn_x, spawn_y = self.smart_spawn(me, view)
+            return cells.Action(cells.ACT_SPAWN,(mx + spawn_x, my + spawn_y, self))
 
         # If I get the message of help go and rescue!
+        map_size = view.energy_map.width
         if (self.step == 0 and True != self.scout and (random.random()>0.2)) :
             ax = 0;
             ay = 0;
-            best = 1000;
+            best = view.energy_map.width + view.energy_map.height;
             message_count = len(msg.get_messages());
             for m in msg.get_messages():
                 (type, ox,oy) = m
@@ -97,14 +130,12 @@ class AgentMind(object):
                         self.y -= agent_offset
                 # Don't stand still once we get there
                 if (self.x == 0 and self.y == 0) :
-                    self.x = 1
+                    self.choose_new_direction(view)
                 self.step = random.randrange(3, 10);
 
         # hit world wall
-        if (mx == 0 or mx == 299) :
-            self.x = random.randrange(-1,1)
-        if (my == 0 or my == 299) :
-            self.y = random.randrange(-1,1)
+        if mx <= 0 or mx >= map_size-1 or my <= 0 or my >= map_size-1 :
+            self.choose_new_direction(view)
 
         # Back to step 0 we can change direction at the next attack
         if (self.step > 0):
