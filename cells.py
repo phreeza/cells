@@ -41,17 +41,9 @@ TIMEOUT = None
 config = ConfigParser.RawConfigParser()
 
 
-def signum(x):
-    if x > 0:
-        return 1
-    if x < 0:
-        return -1
-    return 0
-
-
 def get_next_move(old_x, old_y, x, y):
-    dx = signum(x - old_x)
-    dy = signum(y - old_y)
+    dx = numpy.sign(x - old_x)
+    dy = numpy.sign(y - old_y)
     return (old_x + dx, old_y + dy)
 
 
@@ -66,8 +58,6 @@ class Game(object):
         self.terr = ScalarMapLayer(self.size)
         self.terr.set_random(5)
         self.minds = [m.AgentMind for m in mind_list]
-        self.update_fields = [(x, y) for x in xrange(self.width)
-                                     for y in xrange(self.height)]
 
         self.energy_map = ScalarMapLayer(self.size)
         self.energy_map.set_random(10)
@@ -130,15 +120,12 @@ class Game(object):
 
     def run_agents(self):
         views = []
-        self.update_fields = []
-        update_fields_append = self.update_fields.append
         agent_map_get_small_view_fast = self.agent_map.get_small_view_fast
         plant_map_get_small_view_fast = self.plant_map.get_small_view_fast
         energy_map = self.energy_map
         WV = WorldView
         views_append = views.append
         for a in self.agent_population:
-            update_fields_append(a.get_pos())
             x = a.x
             y = a.y
             agent_view = agent_map_get_small_view_fast(x, y)
@@ -218,7 +205,7 @@ class Game(object):
 
     def tick(self):
         self.disp.update(self.terr, self.agent_population,
-                         self.plant_population, self.update_fields)
+                         self.plant_population, self.energy_map)
         self.disp.flip()
 
         # test for spacebar pressed - if yes, restart
@@ -242,9 +229,8 @@ class Game(object):
 class MapLayer(object):
     def __init__(self, size, val=0):
         self.size = self.width, self.height = size
-        array_data = [[val for x in xrange(self.width)]
-                       for y in xrange(self.height)]
-        self.values = numpy.array(array_data, numpy.object_)
+        self.values = numpy.zeros(size, numpy.object_)
+        self.values[:] = val
 
     def get(self, x, y):
         if y >= 0 and x >= 0:
@@ -263,8 +249,7 @@ class MapLayer(object):
 
 class ScalarMapLayer(MapLayer):
     def set_random(self, range):
-        self.values = numpy.random.random_integers(0, range - 1,
-                                                   (self.width, self.height))
+        self.values = numpy.random.random_integers(0, range - 1, self.size)
 
     def change(self, x, y, val):
         self.values[x, y] += val
@@ -309,7 +294,6 @@ class ObjectMapLayer(MapLayer):
     def insert(self, list):
         for o in list:
             self.set(o.x, o.y, o)
-            
 
 # Use Cython version of get_small_view_fast if available.
 # Otherwise, don't bother folks about it.
@@ -427,32 +411,28 @@ class Display(object):
         pygame.init()
         self.screen = pygame.display.set_mode(self.size)
 
-    def update(self, terr, pop, plants, upfields):
+    def update(self, terr, pop, plants, energy_map):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 sys.exit()
 
-        scale = self.scale
-        scale_tup = (scale, scale)
-        Rect = pygame.Rect
-        fill = self.screen.fill
-        for f in upfields:
-            (x, y) = f
-            scaled_x = x * scale
-            scaled_y = y * scale
-            color = (
-                min(255, 20 * terr.get(x, y)), 
-                min(255, 10 * terr.get(x, y)),
-                0)
-            fill(color, Rect((scaled_x, scaled_y), scale_tup))
+        limit = 150 * numpy.ones_like(terr.values)
+
+        r = numpy.minimum(limit, 20 * terr.values)
+        g = numpy.minimum(limit, 10 * terr.values + 10 * energy_map.values)
+        b = numpy.zeros_like(terr.values)
+
+        img = numpy.dstack((r, g, b))
+
         for a in pop:
-            x = a.x * scale
-            y = a.y * scale
-            fill(a.color, Rect((x, y), scale_tup))
+            img[a.get_pos()] = a.color
+
         for a in plants:
-            x = a.x * scale
-            y = a.y * scale
-            fill(self.green, Rect((x, y), scale_tup))
+            img[a.get_pos()] = self.green
+
+        pygame.transform.scale(pygame.surfarray.make_surface(img),
+                               (self.width * self.scale, self.height * self.scale),
+                               self.screen)
 
     def flip(self):
         pygame.display.flip()

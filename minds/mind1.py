@@ -43,7 +43,6 @@ class AgentMind(object):
         if hungry and food or energy_here > 100:
             return cells.Action(cells.ACT_EAT)
 
-        # what to do if it has a plant
         if self.my_plant:
             plant_pos = self.my_plant.get_pos()
             plant_dist = self.length(
