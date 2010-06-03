@@ -169,6 +169,7 @@ class Game(object):
                     not self.agent_map.get(new_x, new_y) and
                     agent.energy >= SPAWN_MIN_ENERGY):
                     agent.energy -= SPAWN_COST
+                    agent.energy /= 2
                     a = Agent(new_x, new_y, agent.energy, agent.get_team(),
                               self.minds[agent.get_team()],
                               action.get_data()[2:])
