@@ -195,12 +195,14 @@ class Game(object):
                 self.del_agent(agent)
             else :
                 team[agent.team] += 1
-        
+
         if not team[0]:
-            print "Winner is "+ self.mind_list[1].name + " (blue) in: " + str(self.time)
+            print "Winner is %s (blue) in: %s" % (self.mind_list[1].name,
+                                                  str(self.time))
             self.winner = 0
         if not team[1]:
-            print "Winner is "+ self.mind_list[0].name + " (red) in: " + str(self.time)
+            print "Winner is %s (red) in: " % (self.mind_list[1].name,
+                                               str(self.time))
             self.winner = 1
         if self.max_time > 0 and self.time > self.max_time:
             print "It's a draw!"
