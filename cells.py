@@ -116,6 +116,9 @@ class Game(object):
         self.agent_population.remove(a)
         self.agent_map.set(a.x, a.y, None)
         a.alive = False
+        if a.loaded:
+            a.loaded = False
+            self.terr.change(a.x, a.y, 1)
 
     def move_agent(self, a, x, y):
         if abs(self.terr.get(x, y)-self.terr.get(a.x, a.y)) <= 4:
