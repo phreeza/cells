@@ -3,7 +3,7 @@
 
 import cells, random
 
-class AgentMind:
+class AgentMind(object):
     def __init__(self, args):
         # init things
         self.home = None

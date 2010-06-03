@@ -1,7 +1,8 @@
 import random,cells
 
 import cmath, math
-class AgentMind:
+
+class AgentMind(object):
     def __init__(self, junk):
         self.my_plant = None
         self.mode = 1

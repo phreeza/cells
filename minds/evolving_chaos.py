@@ -23,7 +23,7 @@ def fuzz_coord(c):
     return c + randrange(-1,2)
 
 
-class AgentMind:
+class AgentMind(object):
     def __init__(self, args):
         self.my_plant = None
         self.mode = MODE_NORMAL

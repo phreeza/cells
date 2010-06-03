@@ -7,7 +7,7 @@ import random, cells
 import math
 
 
-class AgentMind:
+class AgentMind(object):
     def __init__(self, junk):
         self.my_plant = None
         self.mode = 1

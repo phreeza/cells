@@ -83,7 +83,7 @@ def signum(x):
     return 0
 
 
-class Game:
+class Game(object):
     def __init__(self, bounds, mind_list, symmetric, max_time):
         self.size = self.width, self.height = (bounds, bounds)
         self.messages = [MessageQueue() for x in mind_list]
@@ -272,7 +272,7 @@ class Game:
         self.tic = time.time()
 
 
-class MapLayer:
+class MapLayer(object):
     def __init__(self, size, val=0):
         self.size = self.width, self.height = size
         array_data = [[val for x in xrange(self.width)]
@@ -344,7 +344,7 @@ class ObjectMapLayer(MapLayer):
             self.set(o.x, o.y, o)
             
 
-class Agent:
+class Agent(object):
     __slots__ = ['x', 'y', 'mind', 'energy', 'alive', 'team', 'loaded', 'color',
                  'act']
     def __init__(self, x, y, team, AgentMind, cargs):
@@ -379,7 +379,7 @@ class Agent:
 ACT_SPAWN, ACT_MOVE, ACT_EAT, ACT_ATTACK, ACT_LIFT, ACT_DROP = range(6)
 
 
-class Action:
+class Action(object):
     '''
     A class for passing an action around.
     '''
@@ -394,7 +394,7 @@ class Action:
         return self.type
 
 
-class PlantView:
+class PlantView(object):
     def __init__(self, p):
         self.x = p.x
         self.y = p.y
@@ -407,7 +407,7 @@ class PlantView:
         return self.eff
 
 
-class AgentView:
+class AgentView(object):
     def __init__(self, agent):
         (self.x, self.y) = agent.get_pos()
         self.team = agent.get_team()
@@ -419,7 +419,7 @@ class AgentView:
         return self.team
 
 
-class WorldView:
+class WorldView(object):
     def __init__(self, me, agent_views, plant_views, energy_map):
         self.agent_views = agent_views
         self.plant_views = plant_views
@@ -439,7 +439,7 @@ class WorldView:
         return self.energy_map
 
 
-class Display:
+class Display(object):
     black = (0, 0, 0)
     red = (255, 0, 0)
     green = (0, 255, 0)
@@ -483,7 +483,7 @@ class Display:
         pygame.display.flip()
 
 
-class Plant:
+class Plant(object):
     def __init__(self, x, y, eff):
         self.x = x
         self.y = y
@@ -499,7 +499,7 @@ class Plant:
         return PlantView(self)
 
 
-class MessageQueue:
+class MessageQueue(object):
     def __init__(self):
         self.__inlist = []
         self.__outlist = []
@@ -515,7 +515,7 @@ class MessageQueue:
         return self.__outlist
 
 
-class Message:
+class Message(object):
     def __init__(self, message):
         self.message = message
     def get_message(self):

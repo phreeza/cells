@@ -9,7 +9,7 @@ CallForHelpGene = genes.make_normally_perturbed_gene(0.0)
 CallOfDutyGene = genes.make_normally_perturbed_gene(0.0)
 DraftDodgerGene = genes.make_normally_perturbed_gene(0.0)
 
-class AgentMind:
+class AgentMind(object):
     def __init__(self, args):
         self.my_plant = None
         self.mode = 1
