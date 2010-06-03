@@ -434,8 +434,7 @@ class Display(object):
             img[a.get_pos()] = self.green
 
         pygame.transform.scale(pygame.surfarray.make_surface(img),
-                               (self.width * self.scale, self.height * self.scale),
-                               self.screen)
+                               self.size, self.screen)
 
     def flip(self):
         pygame.display.flip()
