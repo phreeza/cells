@@ -409,7 +409,7 @@ class Display(object):
         pygame.init()
         self.screen  = pygame.display.set_mode(self.size)
         self.surface = pygame.display.get_surface()
-        pygame.display.set_caption("Cells - a massively multi agent programming game")
+        pygame.display.set_caption("Cells")
 
         self.background = pygame.Surface(self.screen.get_size())
         self.background = self.background.convert()
@@ -424,7 +424,6 @@ class Display(object):
             self.surface.blit(text, textpos)
         
         self.screen.blit(self.surface, (0,0))
-        self.flip()
     
     def update(self, terr, pop, plants, energy_map):
         for event in pygame.event.get():
@@ -439,7 +438,7 @@ class Display(object):
 
         img = numpy.dstack((r, g, b))
 
-        #todo: fint out how many teams are playing
+        #todo: find out how many teams are playing
         team_pop = { 0:0, 1:0, 2:0,3:0 } 
         team_col = { 0:(False,False,False), 1:(False,False,False), 2:(False,False,False), 3:(False,False,False) }
 
@@ -453,15 +452,14 @@ class Display(object):
         for a in plants:
             img[a.get_pos()] = self.green
 
-        drawTop = 0
-        for t in team_pop:
-            drawTop += 20
-            #todo: stop the visible flipping somehow???
-            self.show_text(str(team_pop[t]), team_col[t], (10,drawTop))
-
         scale = self.scale
         pygame.transform.scale(pygame.surfarray.make_surface(img),
                                self.size, self.screen)
+        drawTop = 0
+        for t in team_pop:
+            drawTop += 20
+            self.show_text(str(team_pop[t]), team_col[t], (10,drawTop))
+
 
         
 
