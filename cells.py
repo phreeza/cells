@@ -411,27 +411,27 @@ class Display(object):
         pygame.init()
         self.screen = pygame.display.set_mode(self.size)
 
-    def update(self,terr,pop,plants,energy_map):
+    def update(self, terr, pop, plants, energy_map):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 sys.exit()
 
-        limit = 150*numpy.ones_like(terr.values)
+        limit = 150 * numpy.ones_like(terr.values)
 
-        r = numpy.minimum(limit, 20*terr.values)
-        g = numpy.minimum(limit, 10*terr.values + 10*energy_map.values)
+        r = numpy.minimum(limit, 20 * terr.values)
+        g = numpy.minimum(limit, 10 * terr.values + 10 * energy_map.values)
         b = numpy.zeros_like(terr.values)
 
-        img = numpy.dstack((r,g,b))
+        img = numpy.dstack((r, g, b))
 
         for a in pop:
-            img[a.get_pos()]=a.color
+            img[a.get_pos()] = a.color
 
         for a in plants:
-            img[a.get_pos()]=self.green
+            img[a.get_pos()] = self.green
 
         pygame.transform.scale(pygame.surfarray.make_surface(img),
-                               (self.width*self.scale, self.height*self.scale),
+                               (self.width * self.scale, self.height * self.scale),
                                self.screen)
 
     def flip(self):
