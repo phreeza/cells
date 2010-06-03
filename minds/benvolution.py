@@ -33,10 +33,10 @@ def signum(x):
     return 0
 
 
-class MessageType:
+class MessageType(object):
     ATTACK = 0
 
-class AgentMind:
+class AgentMind(object):
     def __init__(self, args):
         # The direction to walk in
         self.x = None
