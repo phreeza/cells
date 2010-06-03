@@ -31,27 +31,27 @@ def get_mind(name):
     return mind
 
 
-STARTING_ENERGY  = 25
 SCATTERED_ENERGY = 5 
 PLANT_MAX_OUTPUT = 11
 PLANT_MIN_OUTPUT = 4
 
+#BODY_ENERGY is the amount of energy that a cells body contains
+#It can not be accessed by the cells, think of it as: they can't
+#eat their own body. It is released again at death.
+BODY_ENERGY  = 25
 ATTACK_POWER = 20
-DEATH_DROP   = 25
 ENERGY_CAP   = 500
 
+#SPAWN_COST is the energy it takes to seperate two cells from each other.
+#It is lost forever, not to be confused with the BODY_ENERGY of the new cell.
 SPAWN_COST      = 20
 SUSTAIN_COST    = 1
 MOVE_COST       = 1    
+#MESSAGE_COST    = 0    
 
-# This must be a function of DEATH_DROP and SPAWN_COST. Why?
-# Consider a cell with SPAWN_MIN_ENERGY that spawns.
-# It creates two cells, each with (SPAWN_MIN_ENERGY - SPAWN_COST) / 2 energy,
-# that will yield DEATH_DROP energy when killed.
-# If (SPAWN_MIN_ENERGY - SPAWN_COST) / 2 < DEATH_DROP, energy is created, so
-# we need SPAWN_MIN_ENERGY - SPAWN_COST) / 2 >= DEATH_DROP, or
-# SPAWN_MIN_ENERGY >= 2 * DEATH_DROP + SPAWN_COST.
-SPAWN_MIN_ENERGY = 2 * DEATH_DROP + SPAWN_COST
+#BODY_ENERGY + SPAWN_COST is invested to create a new cell. What remains is split evenly.
+#With this model we only need to make sure a cell can't commit suicide by spawning.
+SPAWN_MIN_ENERGY = BODY_ENERGY + SPAWN_COST
 
 TIMEOUT = None
 
@@ -181,7 +181,7 @@ class Game(object):
                 if (self.agent_map.in_range(new_x, new_y) and
                     not self.agent_map.get(new_x, new_y) and
                     agent.energy >= SPAWN_MIN_ENERGY):
-                    agent.energy -= SPAWN_COST
+                    agent.energy -= SPAWN_MIN_ENERGY
                     agent.energy /= 2
                     a = Agent(new_x, new_y, agent.energy, agent.get_team(),
                               self.minds[agent.get_team()],
@@ -234,7 +234,7 @@ class Game(object):
         team = [0 for n in self.minds]
         for (agent, action) in actions:
             if agent.energy < 0 and agent.alive:
-                self.energy_map.change(agent.x, agent.y, DEATH_DROP)
+                self.energy_map.change(agent.x, agent.y, BODY_ENERGY)
                 self.del_agent(agent)
             else :
                 team[agent.team] += 1
