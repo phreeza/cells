@@ -33,8 +33,8 @@ def get_mind(name):
 
 STARTING_ENERGY = 20
 SCATTERED_ENERGY = 5 
-PLANT_MAX_OUTPUT = 11
-PLANT_MIN_OUTPUT = 4
+PLANT_MAX_OUTPUT = 20
+PLANT_MIN_OUTPUT = 5
 
 #BODY_ENERGY is the amount of energy that a cells body contains
 #It can not be accessed by the cells, think of it as: they can't
