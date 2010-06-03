@@ -263,9 +263,8 @@ class Game:
 class MapLayer:
     def __init__(self, size, val=0):
         self.size = self.width, self.height = size
-        array_data = [[val for x in xrange(self.width)]
-                       for y in xrange(self.height)]
-        self.values = numpy.array(array_data, numpy.object_)
+        self.values = numpy.zeros(size, numpy.object_)
+        self.values[:] = val
 
     def get(self, x, y):
         if y >= 0 and x >= 0:
@@ -284,8 +283,7 @@ class MapLayer:
 
 class ScalarMapLayer(MapLayer):
     def set_random(self, range):
-        self.values = numpy.random.random_integers(0, range - 1,
-                                                   (self.width, self.height))
+        self.values = numpy.random.random_integers(0, range - 1, self.size)
 
     def change(self, x, y, val):
         self.values[x, y] += val
@@ -447,8 +445,8 @@ class Display:
 
         limit = 150*numpy.ones_like(terr.values)
 
-        r = numpy.minimum(20*terr.values, limit)
-        g = numpy.minimum(10*terr.values + 15*energy_map.values, limit)
+        r = numpy.minimum(limit, 20*terr.values)
+        g = numpy.minimum(limit, 10*terr.values + 15*energy_map.values)
         b = numpy.zeros_like(terr.values)
 
         img = numpy.dstack((r,g,b))
