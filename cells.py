@@ -183,7 +183,6 @@ class Game(object):
                 next_pos = get_next_move(agent.x, agent.y, act_x, act_y)
                 new_x, new_y = next_pos
                 victim = self.agent_map.get(act_x, act_y)
-                venergy = victim.energy
                 if (victim is not None and victim.alive and
                     next_pos == act_data and agent.attack(victim)):
                     self.energy_map.change(new_x, new_y, DEATH_DROP)
