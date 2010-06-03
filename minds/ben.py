@@ -84,6 +84,10 @@ class AgentMind(object):
             if (me.energy < self.defense and (random.random()>0.3)):
                 return cells.Action(cells.ACT_EAT)
 
+        if (self.scout and me.energy > 1000 and random.random()>0.5):
+            spawn_x, spawn_y = self.smart_spawn(me, view)
+            return cells.Action(cells.ACT_SPAWN,(mx + spawn_x, my + spawn_y, self))
+
         # If there is a plant near by go to it and spawn all I can
         if (not self.my_plant) :
             plants = view.get_plants()
