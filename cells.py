@@ -331,7 +331,7 @@ class Agent(object):
     def attack(self, other):
         if not other:
             return False
-        other.energy -= ATTACK_POWER
+        other.energy -= min(self.energy, ATTACK_POWER)
         return other.energy <= 0
 
     def get_team(self):
