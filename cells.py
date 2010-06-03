@@ -421,27 +421,27 @@ class Display(object):
             if event.type == pygame.QUIT:
                 sys.exit()
 
-        scale_tup = (self.scale, self.scale)
+        scale = self.scale
+        scale_tup = (scale, scale)
+        Rect = pygame.Rect
+        fill = self.screen.fill
         for f in upfields:
             (x, y) = f
-            scaled_x = x * self.scale
-            scaled_y = y * self.scale
+            scaled_x = x * scale
+            scaled_y = y * scale
             color = (
                 min(255, 20 * terr.get(x, y)), 
                 min(255, 10 * terr.get(x, y)),
                 0)
-            self.screen.fill(color,
-                             pygame.Rect((scaled_x, scaled_y), scale_tup))
+            fill(color, Rect((scaled_x, scaled_y), scale_tup))
         for a in pop:
-            (x, y) = a.get_pos()
-            x *= self.scale
-            y *= self.scale
-            self.screen.fill(a.color, pygame.Rect((x, y), scale_tup))
+            x = a.x * scale
+            y = a.y * scale
+            fill(a.color, Rect((x, y), scale_tup))
         for a in plants:
-            (x, y) = a.get_pos()
-            x *= self.scale
-            y *= self.scale
-            self.screen.fill(self.green, pygame.Rect((x, y), scale_tup))
+            x = a.x * scale
+            y = a.y * scale
+            fill(self.green, Rect((x, y), scale_tup))
 
     def flip(self):
         pygame.display.flip()
