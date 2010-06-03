@@ -1,17 +1,10 @@
 #!/usr/bin/env python
 #TODO:
-# - Make terrain work
-# - Make ScalarView
 # - Add more actions: PASS, LIFT, DROP,etc...
-# - derive SelfView with more info than the general AgentView
-# - render terrain and energy landscapes
 # - fractal terrain generation
-# - make rendering "smart"(and/or openGL)
 # - Split into several files.
-# - Messaging system
 # - limit frame rate
 # - response objects for outcome of action
-# - Desynchronize agents
 
 import ConfigParser
 import random
@@ -121,6 +114,9 @@ class Game(object):
         self.agent_population.remove(a)
         self.agent_map.set(a.x, a.y, None)
         a.alive = False
+        if a.loaded:
+            a.loaded = False
+            self.terr.change(a.x, a.y, 1)
 
     def move_agent(self, a, x, y):
         if abs(self.terr.get(x, y)-self.terr.get(a.x, a.y)) <= 4:
@@ -452,8 +448,7 @@ class Display(object):
 
         scale = self.scale
         pygame.transform.scale(pygame.surfarray.make_surface(img),
-                               (self.width * scale, self.height * scale),
-                               self.screen)
+                               self.size, self.screen)
 
     def flip(self):
         pygame.display.flip()
@@ -506,7 +501,6 @@ def main():
         bounds = config.getint('terrain', 'bounds')
         symmetric = config.getboolean('terrain', 'symmetric')
         minds_str = str(config.get('minds', 'minds'))
-        mind_list = [get_mind(n) for n in minds_str.split(',')]
     except Exception as e:
         print 'Got error: %s' % e
         config.add_section('minds')
@@ -521,11 +515,13 @@ def main():
         config.read('default.cfg')
         bounds = config.getint('terrain', 'bounds')
         symmetric = config.getboolean('terrain', 'symmetric')
+        minds_str = str(config.get('minds', 'minds'))
+    mind_list = [get_mind(n) for n in minds_str.split(',')]
 
     # accept command line arguments for the minds over those in the config
     try:
         if len(sys.argv)>2:
-            mind_list = [get_mind(n) for n in sys.argv[1:] ]
+            mind_list = [(n, get_mind(n)) for n in sys.argv[1:] ]
     except (ImportError, IndexError):
         pass
 
