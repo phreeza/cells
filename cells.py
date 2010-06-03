@@ -23,27 +23,28 @@ import time
 import numpy
 import pygame, pygame.locals
 
+
 config = ConfigParser.RawConfigParser()
+
 
 def get_mind(name):
     full_name = 'minds.' + name
     __import__(full_name)
     return sys.modules[full_name]
 
-#bounds = None  # HACK
-#symmetric = None
-#mind_list = None
 
 TIMEOUT = None
+
+
 def main():
     global bounds, symmetric, mind_list
+    
     try:
         config.read('default.cfg')
         bounds = config.getint('terrain', 'bounds')
         symmetric = config.getboolean('terrain', 'symmetric')
         minds_str = str(config.get('minds', 'minds'))
         mind_list = [get_mind(n) for n in minds_str.split(',')]
-
     except Exception as e:
         print 'Got error: %s' % e
         config.add_section('minds')
@@ -72,11 +73,12 @@ try:
     psyco.full()
 except ImportError:
     pass
+    
 
 
 class Game:
     def __init__(self, bounds, mind_list, symmetric, max_time):
-        self.size = self.width,self.height = (bounds,bounds)
+        self.size = self.width, self.height = (bounds, bounds)
         self.messages = [MessageQueue() for x in mind_list]
         self.disp = Display(self.size,scale=2)
         self.time = 0
@@ -257,12 +259,13 @@ class Game:
 #pygame.time.wait(int(1000*(time.time()-self.tic)))
         self.tic = time.time()
 
+
 class MapLayer:
     def __init__(self, size, val=0):
         self.size = self.width, self.height = size
-        self.values = numpy.array([[val for x in xrange(self.width)]
-                                   for y in xrange(self.height)],
-                                  numpy.object_)
+        array_data = [[val for x in xrange(self.width)]
+                       for y in xrange(self.height)]
+        self.values = numpy.array(array_data, numpy.object_)
 
     def get(self, x, y):
         if y >= 0 and x >= 0:
@@ -313,7 +316,6 @@ class ObjectMapLayer(MapLayer):
                     pass
         return ret
 
-
     def get_view(self, x, y, r):
         ret = []
         for x_off in xrange(-r, r + 1):
@@ -325,9 +327,10 @@ class ObjectMapLayer(MapLayer):
                     ret.append(a.get_view())
         return ret
 
-    def insert(self,list):
+    def insert(self, list):
         for o in list:
             self.set(o.x, o.y, o)
+            
 
 class Agent:
     __slots__ = ['x', 'y', 'mind', 'energy', 'alive', 'team', 'loaded', 'color',
@@ -341,7 +344,7 @@ class Agent:
         self.team = team
         self.loaded = False
         colors = [(255, 0, 0), (0, 0, 255), (255, 0, 255), (255, 255, 0)]
-        self.color = colors[team%len(colors)]
+        self.color = colors[team % len(colors)]
         self.act = self.mind.act
 
     def get_team(self):
@@ -360,14 +363,16 @@ class Agent:
     def get_view(self):
         return AgentView(self)
 
-#def act(self,view,m):
-#   return self.mind.act(view,m)
 
 ACT_SPAWN, ACT_MOVE, ACT_EAT, ACT_ATTACK, ACT_LIFT, ACT_DROP = range(6)
 
+
 class Action:
-    def __init__(self, type, data=None):
-        self.type = type
+    '''
+    A class for passing an action around.
+    '''
+    def __init__(self, action_type, data=None):
+        self.type = action_type
         self.data = data
 
     def get_data(self):
@@ -375,6 +380,7 @@ class Action:
 
     def get_type(self):
         return self.type
+
 
 class PlantView:
     def __init__(self, p):
@@ -388,6 +394,7 @@ class PlantView:
     def get_eff(self):
         return self.eff
 
+
 class AgentView:
     def __init__(self, agent):
         (self.x, self.y) = agent.get_pos()
@@ -398,6 +405,7 @@ class AgentView:
 
     def get_team(self):
         return self.team
+
 
 class WorldView:
     def __init__(self, me, agent_views, plant_views, energy_map):
@@ -458,6 +466,7 @@ class Display:
     def flip(self):
         pygame.display.flip()
 
+
 class Plant:
     def __init__(self, x, y, eff):
         self.x = x
@@ -489,15 +498,17 @@ class MessageQueue:
     def get_messages(self):
         return self.__outlist
 
+
 class Message:
     def __init__(self, message):
         self.message = message
     def get_message(self):
         return self.message
 
+
 if __name__ == "__main__":
     main()
-    while 1:
-        game = Game(bounds,mind_list,symmetric,-1)
+    while True:
+        game = Game(bounds, mind_list, symmetric, -1)
         while game.winner == None:
             game.tick()

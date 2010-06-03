@@ -1,11 +1,11 @@
-import random,cells
+import random, cells
+
 
 class AgentMind:
     def __init__(self, junk):
         self.my_plant = None
         self.mode = 1
         self.target_range = random.randrange(50,200)
-        pass
 
     def act(self,view,msg):
         x_sum = 0
