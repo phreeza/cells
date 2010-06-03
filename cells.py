@@ -309,6 +309,7 @@ class ObjectMapLayer(MapLayer):
     def insert(self, list):
         for o in list:
             self.set(o.x, o.y, o)
+            
 
 # Use Cython version of get_small_view_fast if available.
 # Otherwise, don't bother folks about it.
