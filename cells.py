@@ -186,7 +186,7 @@ class Game(object):
                 venergy = victim.energy
                 if (victim is not None and victim.alive and
                     next_pos == act_data and agent.attack(victim)):
-                    self.energy_map.change(new_x, new_y, min(DEATH_DROP, venergy))
+                    self.energy_map.change(new_x, new_y, DEATH_DROP)
                     self.del_agent(victim)
             elif action.type == ACT_LIFT:
                 if not agent.loaded and self.terr.get(agent.x, agent.y) > 0:
