@@ -31,13 +31,18 @@ def get_mind(name):
     return mind
 
 
-STARTING_ENERGY = 25
+STARTING_ENERGY  = 25
+SCATTERED_ENERGY = 5 
+PLANT_MAX_OUTPUT = 11
+PLANT_MIN_OUTPUT = 4
 
 ATTACK_POWER = 20
 DEATH_DROP   = 25
 ENERGY_CAP   = 500
 
-SPAWN_COST       = 20
+SPAWN_COST      = 20
+SUSTAIN_COST    = 1
+MOVE_COST       = 1    
 
 # This must be a function of DEATH_DROP and SPAWN_COST. Why?
 # Consider a cell with SPAWN_MIN_ENERGY that spawns.
@@ -47,7 +52,6 @@ SPAWN_COST       = 20
 # we need SPAWN_MIN_ENERGY - SPAWN_COST) / 2 >= DEATH_DROP, or
 # SPAWN_MIN_ENERGY >= 2 * DEATH_DROP + SPAWN_COST.
 SPAWN_MIN_ENERGY = 2 * DEATH_DROP + SPAWN_COST
-
 
 TIMEOUT = None
 
@@ -74,7 +78,7 @@ class Game(object):
         self.minds = [m[1].AgentMind for m in mind_list]
 
         self.energy_map = ScalarMapLayer(self.size)
-        self.energy_map.set_random(10)
+        self.energy_map.set_random(SCATTERED_ENERGY)
 
         self.plant_map = ObjectMapLayer(self.size, None)
         self.plant_population = []
@@ -90,7 +94,7 @@ class Game(object):
         for x in xrange(self.n_plants):
             mx = random.randrange(1, self.width - 1)
             my = random.randrange(1, self.height - 1)
-            eff = random.randrange(5, 11)
+            eff = random.randrange(PLANT_MIN_OUTPUT, PLANT_MAX_OUTPUT)
             p = Plant(mx, my, eff)
             self.plant_population.append(p)
             if symmetric:
@@ -153,19 +157,23 @@ class Game(object):
         #get actions
         messages = self.messages
         actions = [(a, a.act(v, messages[a.team])) for (a, v) in views]
+        actions_dict = dict(actions)
         random.shuffle(actions)
 
         #apply agent actions
         for (agent, action) in actions:
-            agent.energy -= 1
-#      if agent.alive:
+            #This is the cost of mere survival
+            agent.energy -= SUSTAIN_COST
+
             if action.type == ACT_MOVE:
                 act_x, act_y = action.get_data()
                 (new_x, new_y) = get_next_move(agent.x, agent.y,
                                                act_x, act_y)
+                #Only move if the target field is free
                 if (self.agent_map.in_range(new_x, new_y) and
                     not self.agent_map.get(new_x, new_y)):
                     self.move_agent(agent, new_x, new_y)
+                    agent.energy -= MOVE_COST
             elif action.type == ACT_SPAWN:
                 act_x, act_y = action.get_data()[:2]
                 (new_x, new_y) = get_next_move(agent.x, agent.y,
@@ -180,19 +188,39 @@ class Game(object):
                               action.get_data()[2:])
                     self.add_agent(a)
             elif action.type == ACT_EAT:
-                intake = self.energy_map.get(agent.x, agent.y)
+                #Eat only as much as possible.
+                intake = min(self.energy_map.get(agent.x, agent.y),
+                            ENERGY_CAP - agent.energy)
                 agent.energy += intake
-                agent.energy = min(agent.energy, ENERGY_CAP)
                 self.energy_map.change(agent.x, agent.y, -intake)
+            elif action.type == ACT_RELEASE:
+                #Dump some energy onto an adjacent field
+                #No Seppuku
+                output = action.get_data()[2]
+                output = min(agent.energy - 1, output) 
+                act_x, act_y = action.get_data()[:2]
+                #Use get_next_move to simplyfy things if you know 
+                #where the energy is supposed to end up.
+                (out_x, out_y) = get_next_move(agent.x, agent.y,
+                                               act_x, act_y)
+                if (self.agent_map.in_range(out_x, out_y) and
+                    agent.energy >= 1):
+                    agent.energy -= output
+                    self.energy_map.change(new_x,new_y,output)
             elif action.type == ACT_ATTACK:
+                #Make sure agent is attacking an adjacent field.
                 act_x, act_y = act_data = action.get_data()
                 next_pos = get_next_move(agent.x, agent.y, act_x, act_y)
                 new_x, new_y = next_pos
                 victim = self.agent_map.get(act_x, act_y)
                 if (victim is not None and victim.alive and
-                    next_pos == act_data and agent.attack(victim)):
-                    self.energy_map.change(new_x, new_y, DEATH_DROP)
-                    self.del_agent(victim)
+                    next_pos == act_data):
+                    agent.attack(victim)
+                    #If both agents attack each other, both loose double energy
+                    #Think twice before attacking 
+                    if actions_dict[victim].type == ACT_ATTACK:
+                        victim.attack(agent)
+                     
             elif action.type == ACT_LIFT:
                 if not agent.loaded and self.terr.get(agent.x, agent.y) > 0:
                     agent.loaded = True
@@ -206,7 +234,7 @@ class Game(object):
         team = [0 for n in self.minds]
         for (agent, action) in actions:
             if agent.energy < 0 and agent.alive:
-                self.energy_map.change(agent.x, agent.y, 25)
+                self.energy_map.change(agent.x, agent.y, DEATH_DROP)
                 self.del_agent(agent)
             else :
                 team[agent.team] += 1
@@ -357,7 +385,7 @@ class Agent(object):
         return AgentView(self)
 
 
-ACT_SPAWN, ACT_MOVE, ACT_EAT, ACT_ATTACK, ACT_LIFT, ACT_DROP = range(6)
+ACT_SPAWN, ACT_MOVE, ACT_EAT, ACT_RELEASE, ACT_ATTACK, ACT_LIFT, ACT_DROP = range(7)
 
 
 class Action(object):
