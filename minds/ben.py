@@ -1,5 +1,5 @@
 #
-#  Benjamin C. Meyer
+#  Benjamin C. Meyer <ben@meyerhome.net>
 #
 #  Overall rules:
 #  Agents at plants reproduce as much as possible
