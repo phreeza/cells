@@ -180,8 +180,10 @@ class Game(object):
                 next_pos = get_next_move(agent.x, agent.y, act_x, act_y)
                 new_x, new_y = next_pos
                 victim = self.agent_map.get(act_x, act_y)
-                if agent.attack(victim):
-                    self.energy_map.change(new_x, new_y, DEATH_DROP)
+                venergy = victim.energy
+                if (victim is not None and victim.alive and
+                    next_pos == act_data and agent.attack(victim)):
+                    self.energy_map.change(new_x, new_y, min(DEATH_DROP, venergy))
                     self.del_agent(victim)
             elif action.type == ACT_LIFT:
                 if not agent.loaded and self.terr.get(agent.x, agent.y) > 0:
