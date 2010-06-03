@@ -32,7 +32,9 @@ except ImportError:
 def get_mind(name):
     full_name = 'minds.' + name
     __import__(full_name)
-    return sys.modules[full_name]
+    mind = sys.modules[full_name]
+    mind.name = name
+    return mind
 
 
 TIMEOUT = None
@@ -50,6 +52,7 @@ def get_next_move(old_x, old_y, x, y):
 class Game(object):
     def __init__(self, bounds, mind_list, symmetric, max_time):
         self.size = self.width, self.height = (bounds, bounds)
+        self.mind_list = mind_list
         self.messages = [MessageQueue() for x in mind_list]
         self.disp = Display(self.size, scale=2)
         self.time = 0
@@ -194,10 +197,10 @@ class Game(object):
                 team[agent.team] += 1
         
         if not team[0]:
-            print "Winner is blue in: " + str(self.time)
+            print "Winner is "+ self.mind_list[1].name + " (blue) in: " + str(self.time)
             self.winner = 0
         if not team[1]:
-            print "Winner is red in: " + str(self.time)
+            print "Winner is "+ self.mind_list[0].name + " (red) in: " + str(self.time)
             self.winner = 1
         if self.max_time > 0 and self.time > self.max_time:
             print "It's a draw!"
