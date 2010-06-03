@@ -220,10 +220,6 @@ class Game(object):
         for msg in self.messages:
             msg.update()
         self.time += 1
-        if TIMEOUT is not None and self.time > TIMEOUT and not self.winner:
-            print 'no winner due to timeout'
-            self.winner = True
-#pygame.time.wait(int(1000*(time.time()-self.tic)))
         self.tic = time.time()
 
 
