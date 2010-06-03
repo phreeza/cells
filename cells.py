@@ -40,7 +40,7 @@ TIMEOUT = None
 
 config = ConfigParser.RawConfigParser()
 
-def get_next_move(self, old_x, old_y, x, y):
+def get_next_move(old_x, old_y, x, y):
     dx = numpy.sign(x - old_x)
     dy = numpy.sign(y - old_y)
     return (old_x + dx, old_y + dy)
