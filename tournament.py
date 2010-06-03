@@ -45,7 +45,7 @@ def main():
     # accept command line arguments for the minds over those in the config
     try:
         if len(sys.argv)>2:
-            mind_list = [get_mind(n) for n in sys.argv[1:] ]
+            mind_list = [(n,get_mind(n)) for n in sys.argv[1:] ]
     except (ImportError, IndexError):
         pass
 
