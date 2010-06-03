@@ -309,7 +309,17 @@ class ObjectMapLayer(MapLayer):
     def insert(self, list):
         for o in list:
             self.set(o.x, o.y, o)
-            
+
+# Use Cython version of get_small_view_fast if available.
+# Otherwise, don't bother folks about it.
+try:
+    import cells_helpers
+    import types
+    ObjectMapLayer.get_small_view_fast = types.MethodType(
+        cells_helpers.get_small_view_fast, None, ObjectMapLayer)
+except ImportError:
+    pass
+
 
 class Agent(object):
     __slots__ = ['x', 'y', 'mind', 'energy', 'alive', 'team', 'loaded', 'color',
