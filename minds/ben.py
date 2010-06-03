@@ -25,8 +25,7 @@ class MessageType(object):
 class AgentMind(object):
     def __init__(self, args):
         # The direction to walk in
-        self.x = random.randrange(-3,3)
-        self.y = random.randrange(-3,3)
+        self.x = False
         # Don't come to the rescue, continue looking for plants & bad guys
         self.scout = (random.random() > 0.9)
         # Once we are attacked (mainly) those reproducing at plants should eat up a defense
@@ -38,7 +37,17 @@ class AgentMind(object):
         self.my_plant = None
         pass
 
+    def choose_new_direction(self, view) :
+        me = view.get_me()
+        self.x = random.randrange(view.energy_map.width) - me.x
+        self.y = random.randrange(view.energy_map.height) - me.y
+        #self.x = random.randrange(-2, 2)
+        #self.y = random.randrange(-2, 2)
+
     def act(self, view, msg):
+        if not self.x:
+            self.choose_new_direction(view)
+
         me = view.get_me()
         my_pos = (mx,my) = me.get_pos()
 
@@ -67,10 +76,11 @@ class AgentMind(object):
             return cells.Action(cells.ACT_SPAWN,(mx+random.randrange(-5,5),my+random.randrange(-5,5), self))
 
         # If I get the message of help go and rescue!
+        map_size = view.energy_map.width
         if (self.step == 0 and True != self.scout and (random.random()>0.2)) :
             ax = 0;
             ay = 0;
-            best = 1000;
+            best = view.energy_map.width + view.energy_map.height;
             message_count = len(msg.get_messages());
             for m in msg.get_messages():
                 (type, ox,oy) = m
@@ -97,14 +107,12 @@ class AgentMind(object):
                         self.y -= agent_offset
                 # Don't stand still once we get there
                 if (self.x == 0 and self.y == 0) :
-                    self.x = 1
+                    self.choose_new_direction(view)
                 self.step = random.randrange(3, 10);
 
         # hit world wall
-        if (mx == 0 or mx == 299) :
-            self.x = random.randrange(-1,1)
-        if (my == 0 or my == 299) :
-            self.y = random.randrange(-1,1)
+        if mx <= 0 or mx >= map_size-1 or my <= 0 or my >= map_size-1 :
+            self.choose_new_direction(view)
 
         # Back to step 0 we can change direction at the next attack
         if (self.step > 0):
