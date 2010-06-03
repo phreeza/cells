@@ -9,7 +9,9 @@ config = ConfigParser.RawConfigParser()
 def get_mind(name):
     full_name = 'minds.' + name
     __import__(full_name)
-    return sys.modules[full_name]
+    mind = sys.modules[full_name]
+    mind.name = name
+    return mind
 
 bounds = None  # HACK
 symmetric = None
