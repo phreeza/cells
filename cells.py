@@ -193,13 +193,13 @@ class Game(object):
                 team[agent.team] += 1
 
         if not team[0]:
-            print "Winner is %s (blue) in: %s" % (self.mind_list[1].name,
+            print "Winner is %s (blue) in: %s" % (self.mind_list[1][1].name,
                                                   str(self.time))
-            self.winner = 0
-        if not team[1]:
-            print "Winner is %s (red) in: " % (self.mind_list[1].name,
-                                               str(self.time))
             self.winner = 1
+        if not team[1]:
+            print "Winner is %s (red) in: %s" % (self.mind_list[0][1].name,
+                                               str(self.time))
+            self.winner = 0
         if self.max_time > 0 and self.time > self.max_time:
             print "It's a draw!"
             self.winner = -1
