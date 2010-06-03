@@ -30,8 +30,25 @@ def get_mind(name):
     return mind
 
 
-TIMEOUT = None
+STARTING_ENERGY = 25
 
+ATTACK_POWER = 20
+DEATH_DROP   = 25
+ENERGY_CAP   = 500
+
+SPAWN_COST       = 20
+
+# This must be a function of DEATH_DROP and SPAWN_COST. Why?
+# Consider a cell with SPAWN_MIN_ENERGY that spawns.
+# It creates two cells, each with (SPAWN_MIN_ENERGY - SPAWN_COST) / 2 energy,
+# that will yield DEATH_DROP energy when killed.
+# If (SPAWN_MIN_ENERGY - SPAWN_COST) / 2 < DEATH_DROP, energy is created, so
+# we need SPAWN_MIN_ENERGY - SPAWN_COST) / 2 >= DEATH_DROP, or
+# SPAWN_MIN_ENERGY >= 2 * DEATH_DROP + SPAWN_COST.
+SPAWN_MIN_ENERGY = 2 * DEATH_DROP + SPAWN_COST
+
+
+TIMEOUT = None
 
 config = ConfigParser.RawConfigParser()
 
@@ -84,7 +101,7 @@ class Game(object):
             (mx, my) = self.plant_population[idx].get_pos()
             fuzzed_x = mx + random.randrange(-1, 2)
             fuzzed_y = my + random.randrange(-1, 2)
-            self.agent_population.append(Agent(fuzzed_x, fuzzed_y, idx,
+            self.agent_population.append(Agent(fuzzed_x, fuzzed_y, STARTING_ENERGY, idx,
                                                self.minds[idx], None))
             self.agent_map.insert(self.agent_population)
 
@@ -154,26 +171,27 @@ class Game(object):
                                                act_x, act_y)
                 if (self.agent_map.in_range(new_x, new_y) and
                     not self.agent_map.get(new_x, new_y) and
-                    agent.energy >= 50):
-                    a = Agent(new_x, new_y, agent.get_team(),
+                    agent.energy >= SPAWN_MIN_ENERGY):
+                    agent.energy -= SPAWN_COST
+                    agent.energy /= 2
+                    a = Agent(new_x, new_y, agent.energy, agent.get_team(),
                               self.minds[agent.get_team()],
                               action.get_data()[2:])
                     self.add_agent(a)
-                    agent.energy -= 50
             elif action.type == ACT_EAT:
                 intake = self.energy_map.get(agent.x, agent.y)
                 agent.energy += intake
+                agent.energy = min(agent.energy, ENERGY_CAP)
                 self.energy_map.change(agent.x, agent.y, -intake)
             elif action.type == ACT_ATTACK:
                 act_x, act_y = act_data = action.get_data()
                 next_pos = get_next_move(agent.x, agent.y, act_x, act_y)
                 new_x, new_y = next_pos
                 victim = self.agent_map.get(act_x, act_y)
-                if (victim is not None and next_pos == act_data and
-                    victim.alive):
-                    energy = self.agent_map.get(new_x, new_y).energy + 25
-                    self.energy_map.change(new_x, new_y, energy)
-                    self.del_agent(self.agent_map.get(new_x, new_y))
+                if (victim is not None and victim.alive and
+                    next_pos == act_data and agent.attack(victim)):
+                    self.energy_map.change(new_x, new_y, DEATH_DROP)
+                    self.del_agent(victim)
             elif action.type == ACT_LIFT:
                 if not agent.loaded and self.terr.get(agent.x, agent.y) > 0:
                     agent.loaded = True
@@ -306,17 +324,23 @@ except ImportError:
 class Agent(object):
     __slots__ = ['x', 'y', 'mind', 'energy', 'alive', 'team', 'loaded', 'color',
                  'act']
-    def __init__(self, x, y, team, AgentMind, cargs):
+    def __init__(self, x, y, energy, team, AgentMind, cargs):
         self.x = x
         self.y = y
         self.mind = AgentMind(cargs)
-        self.energy = 25
+        self.energy = energy
         self.alive = True
         self.team = team
         self.loaded = False
         colors = [(255, 0, 0), (0, 0, 255), (255, 0, 255), (255, 255, 0)]
         self.color = colors[team % len(colors)]
         self.act = self.mind.act
+
+    def attack(self, other):
+        if not other:
+            return False
+        other.energy -= ATTACK_POWER
+        return other.energy <= 0
 
     def get_team(self):
         return self.team
@@ -502,7 +526,7 @@ def main():
     # accept command line arguments for the minds over those in the config
     try:
         if len(sys.argv)>2:
-            mind_list = [(n, get_mind(n)) for n in sys.argv[1:] ]
+            mind_list = [get_mind(n) for n in sys.argv[1:] ]
     except (ImportError, IndexError):
         pass
 
