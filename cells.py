@@ -446,7 +446,7 @@ class Display:
         limit = 150*numpy.ones_like(terr.values)
 
         r = numpy.minimum(limit, 20*terr.values)
-        g = numpy.minimum(limit, 10*terr.values + 15*energy_map.values)
+        g = numpy.minimum(limit, 10*terr.values + 10*energy_map.values)
         b = numpy.zeros_like(terr.values)
 
         img = numpy.dstack((r,g,b))
