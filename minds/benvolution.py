@@ -40,23 +40,26 @@ class AgentMind(object):
     def __init__(self, args):
         # The direction to walk in
         self.x = None
-        # Don't come to the rescue, continue looking for plants & bad guys
-        self.scout = (random.random() > 0.9)
         # Once we are attacked (mainly) those reproducing at plants should eat up a defense
         self.defense = 0
         # Don't have everyone walk on the same line to 1) eat as they walk and 2) find still hidden plants easier
         self.step = 0
         # reproduce for at least X children at a plant before going out and attacking
-        self.children = 0
         self.my_plant = None
         self.bumps = 0
         self.last_pos = (-1, -1)
 
         if args is None:
             self.strain = 0
+            self.scout = False
         else:
             parent = args[0]
             self.strain = parent.strain
+            # Don't come to the rescue, continue looking for plants & bad guys
+            if parent.my_plant:
+                self.scout = (random.random() > 0.9)
+            else:
+                self.scout = False
 
 
     def get_available_space_grid(self, me, view):
@@ -107,8 +110,9 @@ class AgentMind(object):
                 msg.send_message((self.strain, MessageType.ATTACK, mx,my))
                 return cells.Action(cells.ACT_ATTACK, a.get_pos())
 
-        # Eat any energy I find until I am 'full'
-        if (view.get_energy().get(mx, my) > 0) :
+        # Eat any energy I find until I am 'full'. The cost of eating
+        # is 1, so don't eat just 1 energy.
+        if view.get_energy().get(mx, my) > 1:
             if (me.energy <= 50):
                 return cells.Action(cells.ACT_EAT)
             if (me.energy < self.defense and (random.random()>0.3)):
@@ -188,6 +192,4 @@ class AgentMind(object):
         if self.step:
             self.step -= 1
 
-        # Move quickly randomly in my birth direction
         return cells.Action(cells.ACT_MOVE,(mx+self.x,my+self.y))
-#    return cells.Action(cells.ACT_MOVE,(mx+self.x+random.randrange(-1,2),my+self.y+random.randrange(-1,2)))
