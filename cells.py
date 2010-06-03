@@ -14,6 +14,7 @@ import time
 import numpy
 import pygame, pygame.locals
 
+if not pygame.font: print 'Warning, fonts disabled'
 
 try:
     import psyco
@@ -406,8 +407,25 @@ class Display(object):
         self.scale = scale
         self.size = (self.width * scale, self.height * scale)
         pygame.init()
-        self.screen = pygame.display.set_mode(self.size)
+        self.screen  = pygame.display.set_mode(self.size)
+        self.surface = pygame.display.get_surface()
+        pygame.display.set_caption("Cells - a massively multi agent programming game")
 
+        self.background = pygame.Surface(self.screen.get_size())
+        self.background = self.background.convert()
+        self.background.fill((150,150,150))
+
+    def show_text(self, text, color, topleft):
+        if pygame.font:
+            font = pygame.font.Font(None, 24)
+            text = font.render(text, 1, color)
+            textpos = text.get_rect()
+            textpos.topleft = topleft
+            self.surface.blit(text, textpos)
+        
+        self.screen.blit(self.surface, (0,0))
+        self.flip()
+    
     def update(self, terr, pop, plants, energy_map):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -421,15 +439,31 @@ class Display(object):
 
         img = numpy.dstack((r, g, b))
 
+        #todo: fint out how many teams are playing
+        team_pop = { 0:0, 1:0, 2:0,3:0 } 
+        team_col = { 0:(False,False,False), 1:(False,False,False), 2:(False,False,False), 3:(False,False,False) }
+
+
         for a in pop:
             img[a.get_pos()] = a.color
+            team_pop[a.get_team()] += 1
+            if(not team_col[a.get_team()] == False):
+                team_col[a.get_team()] = a.color
 
         for a in plants:
             img[a.get_pos()] = self.green
 
+        drawTop = 0
+        for t in team_pop:
+            drawTop += 20
+            #todo: stop the visible flipping somehow???
+            self.show_text(str(team_pop[t]), team_col[t], (10,drawTop))
+
         scale = self.scale
         pygame.transform.scale(pygame.surfarray.make_surface(img),
                                self.size, self.screen)
+
+        
 
     def flip(self):
         pygame.display.flip()
