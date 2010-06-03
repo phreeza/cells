@@ -29,7 +29,7 @@ class AgentMind:
                 return cells.Action(cells.ACT_ATTACK, a.get_pos())
 
         # Attach to the strongest plant found.
-        if view.get_plants()
+        if view.get_plants():
             plant = view.get_plants()[0]
             if not self.my_plant:
                 self.my_plant = plant
