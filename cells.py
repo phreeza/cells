@@ -210,7 +210,7 @@ class Game(object):
                 if (self.agent_map.in_range(out_x, out_y) and
                     agent.energy >= 1):
                     agent.energy -= output
-                    self.energy_map.change(new_x,new_y,output)
+                    self.energy_map.change(out_x, out_y, output)
             elif action.type == ACT_ATTACK:
                 #Make sure agent is attacking an adjacent field.
                 act_x, act_y = act_data = action.get_data()
