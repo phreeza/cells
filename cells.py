@@ -520,9 +520,6 @@ class Display(object):
             drawTop += 20
             self.show_text(str(team_pop[t]), team_col[t], (10, drawTop))
 
-
-        
-
     def flip(self):
         pygame.display.flip()
 
