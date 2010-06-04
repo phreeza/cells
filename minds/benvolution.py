@@ -25,14 +25,6 @@ import numpy
 
 import genes
 
-def signum(x):
-    if x > 0:
-        return 1
-    if x < 0:
-        return -1
-    return 0
-
-
 class MessageType(object):
     ATTACK = 0
 
@@ -40,11 +32,10 @@ class AgentMind(object):
     def __init__(self, args):
         # The direction to walk in
         self.x = None
-        # Once we are attacked (mainly) those reproducing at plants should eat up a defense
+        # Once we are attacked (mainly) those reproducing at plants should eat up a defense.
         self.defense = 0
-        # Don't have everyone walk on the same line to 1) eat as they walk and 2) find still hidden plants easier
+
         self.step = 0
-        # reproduce for at least X children at a plant before going out and attacking
         self.my_plant = None
         self.bumps = 0
         self.last_pos = (-1, -1)
@@ -55,7 +46,7 @@ class AgentMind(object):
         else:
             parent = args[0]
             self.strain = parent.strain
-            # Don't come to the rescue, continue looking for plants & bad guys
+            # Don't come to the rescue, continue looking for plants & bad guys.
             if parent.my_plant:
                 self.scout = (random.random() > 0.9)
             else:
@@ -81,8 +72,8 @@ class AgentMind(object):
 
     def would_bump(self, me, view, dir_x, dir_y):
         grid = self.get_available_space_grid(me, view)
-        dx = signum(dir_x)
-        dy = signum(dir_y)
+        dx = numpy.sign(dir_x)
+        dy = numpy.sign(dir_y)
         adj_dx = dx + 1
         adj_dy = dy + 1
         return grid[adj_dx,adj_dy] == 0
