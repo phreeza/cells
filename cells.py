@@ -357,6 +357,7 @@ try:
 except ImportError:
     pass
 
+TEAM_COLORS = [(255, 0, 0), (255, 255, 255), (255, 0, 255), (255, 255, 0)]
 
 class Agent(object):
     __slots__ = ['x', 'y', 'mind', 'energy', 'alive', 'team', 'loaded', 'color',
@@ -369,8 +370,7 @@ class Agent(object):
         self.alive = True
         self.team = team
         self.loaded = False
-        colors = [(255, 0, 0), (255, 255, 255), (255, 0, 255), (255, 255, 0)]
-        self.color = colors[team % len(colors)]
+        self.color = TEAM_COLORS[team % len(TEAM_COLORS)]
         self.act = self.mind.act
 
     def attack(self, other):
@@ -503,8 +503,6 @@ class Display(object):
 
         #todo: find out how many teams are playing
         team_pop = [0,0,0,0]
-        team_col = [(False,False,False), (False,False,False),
-                    (False,False,False), (False,False,False)]
 
 
         for a in pop:
@@ -522,7 +520,7 @@ class Display(object):
         drawTop = 0
         for t in xrange(len(team_pop)):
             drawTop += 20
-            self.show_text(str(team_pop[t]), team_col[t], (10, drawTop))
+            self.show_text(str(team_pop[t]), TEAM_COLORS[t], (10, drawTop))
 
     def flip(self):
         pygame.display.flip()
