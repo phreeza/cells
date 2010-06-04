@@ -72,6 +72,7 @@ class Game(object):
         self.messages = [MessageQueue() for x in mind_list]
         self.disp = Display(self.size, scale=2)
         self.time = 0
+        self.clock = pygame.time.Clock()
         self.max_time = max_time
         self.tic = time.time()
         self.terr = ScalarMapLayer(self.size)
@@ -272,6 +273,9 @@ class Game(object):
             msg.update()
         self.time += 1
         self.tic = time.time()
+        self.clock.tick()
+        if self.time % 100 == 0:
+            print 'FPS: %f' % self.clock.get_fps()
 
 
 class MapLayer(object):
