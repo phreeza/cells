@@ -471,16 +471,19 @@ class Display(object):
         self.background = self.background.convert()
         self.background.fill((150,150,150))
 
-    def show_text(self, text, color, topleft):
-        if pygame.font:
+    if pygame.font:
+        def show_text(self, text, color, topleft):
             font = pygame.font.Font(None, 24)
             text = font.render(text, 1, color)
             textpos = text.get_rect()
             textpos.topleft = topleft
             self.surface.blit(text, textpos)
-        
-        self.screen.blit(self.surface, (0,0))
-    
+            self.screen.blit(self.surface, (0, 0))
+    else:
+        def show_text(self, text, color, topleft):
+            self.screen.blit(self.surface, (0, 0))
+
+    @profile
     def update(self, terr, pop, plants, energy_map):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -495,15 +498,16 @@ class Display(object):
         img = numpy.dstack((r, g, b))
 
         #todo: find out how many teams are playing
-        team_pop = { 0:0, 1:0, 2:0,3:0 } 
-        team_col = { 0:(False,False,False), 1:(False,False,False), 2:(False,False,False), 3:(False,False,False) }
+        team_pop = [0,0,0,0]
+        team_col = [(False,False,False), (False,False,False),
+                    (False,False,False), (False,False,False)]
 
 
         for a in pop:
-            img[a.get_pos()] = a.color
-            team_pop[a.get_team()] += 1
-            if(not team_col[a.get_team()] == False):
-                team_col[a.get_team()] = a.color
+            img[(a.x, a.y)] = a.color
+            team_pop[a.team] += 1
+            if(not team_col[a.team] == False):
+                team_col[a.team] = a.color
 
         for a in plants:
             img[a.get_pos()] = self.green
@@ -512,9 +516,9 @@ class Display(object):
         pygame.transform.scale(pygame.surfarray.make_surface(img),
                                self.size, self.screen)
         drawTop = 0
-        for t in team_pop:
+        for t in xrange(len(team_pop)):
             drawTop += 20
-            self.show_text(str(team_pop[t]), team_col[t], (10,drawTop))
+            self.show_text(str(team_pop[t]), team_col[t], (10, drawTop))
 
 
         
