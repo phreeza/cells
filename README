@@ -2,6 +2,8 @@ Cells is a multi agent programing game written in Python.
 
 For more information see: http://phonons.wordpress.com/2010/06/01/cells-a-massively-multi-agent-python-programming-game/
 
+Join #pycells on irc.freenode.net to discuss Cells
+
 Requirements:
 pygame
 numpy
