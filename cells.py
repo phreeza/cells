@@ -487,7 +487,6 @@ class Display(object):
         def show_text(self, text, color, topleft):
             self.screen.blit(self.surface, (0, 0))
 
-    @profile
     def update(self, terr, pop, plants, energy_map):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -508,8 +507,6 @@ class Display(object):
         for a in pop:
             img[(a.x, a.y)] = a.color
             team_pop[a.team] += 1
-            if(not team_col[a.team] == False):
-                team_col[a.team] = a.color
 
         for a in plants:
             img[a.get_pos()] = self.green
