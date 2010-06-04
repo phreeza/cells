@@ -14,6 +14,7 @@ import time
 import numpy
 import pygame, pygame.locals
 
+if not pygame.font: print 'Warning, fonts disabled'
 
 try:
     import psyco
@@ -30,23 +31,28 @@ def get_mind(name):
     return mind
 
 
-STARTING_ENERGY = 25
+STARTING_ENERGY = 20
+SCATTERED_ENERGY = 5 
+PLANT_MAX_OUTPUT = 20
+PLANT_MIN_OUTPUT = 5
 
+#BODY_ENERGY is the amount of energy that a cells body contains
+#It can not be accessed by the cells, think of it as: they can't
+#eat their own body. It is released again at death.
+BODY_ENERGY  = 25
 ATTACK_POWER = 20
-DEATH_DROP   = 25
 ENERGY_CAP   = 500
 
-SPAWN_COST       = 20
+#SPAWN_COST is the energy it takes to seperate two cells from each other.
+#It is lost forever, not to be confused with the BODY_ENERGY of the new cell.
+SPAWN_COST      = 20
+SUSTAIN_COST    = 1
+MOVE_COST       = 1    
+#MESSAGE_COST    = 0    
 
-# This must be a function of DEATH_DROP and SPAWN_COST. Why?
-# Consider a cell with SPAWN_MIN_ENERGY that spawns.
-# It creates two cells, each with (SPAWN_MIN_ENERGY - SPAWN_COST) / 2 energy,
-# that will yield DEATH_DROP energy when killed.
-# If (SPAWN_MIN_ENERGY - SPAWN_COST) / 2 < DEATH_DROP, energy is created, so
-# we need SPAWN_MIN_ENERGY - SPAWN_COST) / 2 >= DEATH_DROP, or
-# SPAWN_MIN_ENERGY >= 2 * DEATH_DROP + SPAWN_COST.
-SPAWN_MIN_ENERGY = 2 * DEATH_DROP + SPAWN_COST
-
+#BODY_ENERGY + SPAWN_COST is invested to create a new cell. What remains is split evenly.
+#With this model we only need to make sure a cell can't commit suicide by spawning.
+SPAWN_MIN_ENERGY = BODY_ENERGY + SPAWN_COST
 
 TIMEOUT = None
 
@@ -70,10 +76,10 @@ class Game(object):
         self.tic = time.time()
         self.terr = ScalarMapLayer(self.size)
         self.terr.set_random(5)
-        self.minds = [m.AgentMind for m in mind_list]
+        self.minds = [m[1].AgentMind for m in mind_list]
 
         self.energy_map = ScalarMapLayer(self.size)
-        self.energy_map.set_random(10)
+        self.energy_map.set_random(SCATTERED_ENERGY)
 
         self.plant_map = ObjectMapLayer(self.size, None)
         self.plant_population = []
@@ -89,7 +95,7 @@ class Game(object):
         for x in xrange(self.n_plants):
             mx = random.randrange(1, self.width - 1)
             my = random.randrange(1, self.height - 1)
-            eff = random.randrange(5, 11)
+            eff = random.randrange(PLANT_MIN_OUTPUT, PLANT_MAX_OUTPUT)
             p = Plant(mx, my, eff)
             self.plant_population.append(p)
             if symmetric:
@@ -99,8 +105,11 @@ class Game(object):
 
         for idx in xrange(len(self.minds)):
             (mx, my) = self.plant_population[idx].get_pos()
-            fuzzed_x = mx + random.randrange(-1, 2)
-            fuzzed_y = my + random.randrange(-1, 2)
+            fuzzed_x = mx
+            fuzzed_y = my
+            while fuzzed_x == mx and fuzzed_y == my:
+                fuzzed_x = mx + random.randrange(-1, 2)
+                fuzzed_y = my + random.randrange(-1, 2)
             self.agent_population.append(Agent(fuzzed_x, fuzzed_y, STARTING_ENERGY, idx,
                                                self.minds[idx], None))
             self.agent_map.insert(self.agent_population)
@@ -152,19 +161,23 @@ class Game(object):
         #get actions
         messages = self.messages
         actions = [(a, a.act(v, messages[a.team])) for (a, v) in views]
+        actions_dict = dict(actions)
         random.shuffle(actions)
 
         #apply agent actions
         for (agent, action) in actions:
-            agent.energy -= 1
-#      if agent.alive:
+            #This is the cost of mere survival
+            agent.energy -= SUSTAIN_COST
+
             if action.type == ACT_MOVE:
                 act_x, act_y = action.get_data()
                 (new_x, new_y) = get_next_move(agent.x, agent.y,
                                                act_x, act_y)
+                #Only move if the target field is free
                 if (self.agent_map.in_range(new_x, new_y) and
                     not self.agent_map.get(new_x, new_y)):
                     self.move_agent(agent, new_x, new_y)
+                    agent.energy -= MOVE_COST
             elif action.type == ACT_SPAWN:
                 act_x, act_y = action.get_data()[:2]
                 (new_x, new_y) = get_next_move(agent.x, agent.y,
@@ -172,26 +185,46 @@ class Game(object):
                 if (self.agent_map.in_range(new_x, new_y) and
                     not self.agent_map.get(new_x, new_y) and
                     agent.energy >= SPAWN_MIN_ENERGY):
-                    agent.energy -= SPAWN_COST
+                    agent.energy -= SPAWN_MIN_ENERGY
                     agent.energy /= 2
                     a = Agent(new_x, new_y, agent.energy, agent.get_team(),
                               self.minds[agent.get_team()],
                               action.get_data()[2:])
                     self.add_agent(a)
             elif action.type == ACT_EAT:
-                intake = self.energy_map.get(agent.x, agent.y)
+                #Eat only as much as possible.
+                intake = min(self.energy_map.get(agent.x, agent.y),
+                            ENERGY_CAP - agent.energy)
                 agent.energy += intake
-                agent.energy = min(agent.energy, ENERGY_CAP)
                 self.energy_map.change(agent.x, agent.y, -intake)
+            elif action.type == ACT_RELEASE:
+                #Dump some energy onto an adjacent field
+                #No Seppuku
+                output = action.get_data()[2]
+                output = min(agent.energy - 1, output) 
+                act_x, act_y = action.get_data()[:2]
+                #Use get_next_move to simplyfy things if you know 
+                #where the energy is supposed to end up.
+                (out_x, out_y) = get_next_move(agent.x, agent.y,
+                                               act_x, act_y)
+                if (self.agent_map.in_range(out_x, out_y) and
+                    agent.energy >= 1):
+                    agent.energy -= output
+                    self.energy_map.change(new_x,new_y,output)
             elif action.type == ACT_ATTACK:
+                #Make sure agent is attacking an adjacent field.
                 act_x, act_y = act_data = action.get_data()
                 next_pos = get_next_move(agent.x, agent.y, act_x, act_y)
                 new_x, new_y = next_pos
                 victim = self.agent_map.get(act_x, act_y)
                 if (victim is not None and victim.alive and
-                    next_pos == act_data and agent.attack(victim)):
-                    self.energy_map.change(new_x, new_y, DEATH_DROP)
-                    self.del_agent(victim)
+                    next_pos == act_data):
+                    agent.attack(victim)
+                    #If both agents attack each other, both loose double energy
+                    #Think twice before attacking 
+                    if actions_dict[victim].type == ACT_ATTACK:
+                        victim.attack(agent)
+                     
             elif action.type == ACT_LIFT:
                 if not agent.loaded and self.terr.get(agent.x, agent.y) > 0:
                     agent.loaded = True
@@ -205,19 +238,19 @@ class Game(object):
         team = [0 for n in self.minds]
         for (agent, action) in actions:
             if agent.energy < 0 and agent.alive:
-                self.energy_map.change(agent.x, agent.y, 25)
+                self.energy_map.change(agent.x, agent.y, BODY_ENERGY)
                 self.del_agent(agent)
             else :
                 team[agent.team] += 1
 
         if not team[0]:
-            print "Winner is %s (blue) in: %s" % (self.mind_list[1].name,
+            print "Winner is %s (blue) in: %s" % (self.mind_list[1][1].name,
                                                   str(self.time))
-            self.winner = 0
-        if not team[1]:
-            print "Winner is %s (red) in: " % (self.mind_list[1].name,
-                                               str(self.time))
             self.winner = 1
+        if not team[1]:
+            print "Winner is %s (red) in: %s" % (self.mind_list[0][1].name,
+                                               str(self.time))
+            self.winner = 0
         if self.max_time > 0 and self.time > self.max_time:
             print "It's a draw!"
             self.winner = -1
@@ -226,7 +259,7 @@ class Game(object):
         self.disp.update(self.terr, self.agent_population,
                          self.plant_population, self.energy_map)
         self.disp.flip()
-
+        
         # test for spacebar pressed - if yes, restart
         for event in pygame.event.get():
             if (event.type == pygame.locals.KEYUP and
@@ -238,10 +271,6 @@ class Game(object):
         for msg in self.messages:
             msg.update()
         self.time += 1
-        if TIMEOUT is not None and self.time > TIMEOUT and not self.winner:
-            print 'no winner due to timeout'
-            self.winner = True
-#pygame.time.wait(int(1000*(time.time()-self.tic)))
         self.tic = time.time()
 
 
@@ -336,7 +365,7 @@ class Agent(object):
         self.alive = True
         self.team = team
         self.loaded = False
-        colors = [(255, 0, 0), (0, 0, 255), (255, 0, 255), (255, 255, 0)]
+        colors = [(255, 0, 0), (255, 255, 255), (255, 0, 255), (255, 255, 0)]
         self.color = colors[team % len(colors)]
         self.act = self.mind.act
 
@@ -360,7 +389,7 @@ class Agent(object):
         return AgentView(self)
 
 
-ACT_SPAWN, ACT_MOVE, ACT_EAT, ACT_ATTACK, ACT_LIFT, ACT_DROP = range(6)
+ACT_SPAWN, ACT_MOVE, ACT_EAT, ACT_RELEASE, ACT_ATTACK, ACT_LIFT, ACT_DROP = range(7)
 
 
 class Action(object):
@@ -434,13 +463,29 @@ class Display(object):
         self.scale = scale
         self.size = (self.width * scale, self.height * scale)
         pygame.init()
-        self.screen = pygame.display.set_mode(self.size)
+        self.screen  = pygame.display.set_mode(self.size)
+        self.surface = pygame.display.get_surface()
+        pygame.display.set_caption("Cells")
 
+        self.background = pygame.Surface(self.screen.get_size())
+        self.background = self.background.convert()
+        self.background.fill((150,150,150))
+
+    def show_text(self, text, color, topleft):
+        if pygame.font:
+            font = pygame.font.Font(None, 24)
+            text = font.render(text, 1, color)
+            textpos = text.get_rect()
+            textpos.topleft = topleft
+            self.surface.blit(text, textpos)
+        
+        self.screen.blit(self.surface, (0,0))
+    
     def update(self, terr, pop, plants, energy_map):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 sys.exit()
-
+        
         limit = 150 * numpy.ones_like(terr.values)
 
         r = numpy.minimum(limit, 20 * terr.values)
@@ -449,8 +494,16 @@ class Display(object):
 
         img = numpy.dstack((r, g, b))
 
+        #todo: find out how many teams are playing
+        team_pop = { 0:0, 1:0, 2:0,3:0 } 
+        team_col = { 0:(False,False,False), 1:(False,False,False), 2:(False,False,False), 3:(False,False,False) }
+
+
         for a in pop:
             img[a.get_pos()] = a.color
+            team_pop[a.get_team()] += 1
+            if(not team_col[a.get_team()] == False):
+                team_col[a.get_team()] = a.color
 
         for a in plants:
             img[a.get_pos()] = self.green
@@ -458,6 +511,13 @@ class Display(object):
         scale = self.scale
         pygame.transform.scale(pygame.surfarray.make_surface(img),
                                self.size, self.screen)
+        drawTop = 0
+        for t in team_pop:
+            drawTop += 20
+            self.show_text(str(team_pop[t]), team_col[t], (10,drawTop))
+
+
+        
 
     def flip(self):
         pygame.display.flip()
@@ -525,12 +585,12 @@ def main():
         bounds = config.getint('terrain', 'bounds')
         symmetric = config.getboolean('terrain', 'symmetric')
         minds_str = str(config.get('minds', 'minds'))
-    mind_list = [get_mind(n) for n in minds_str.split(',')]
+    mind_list = [(n, get_mind(n)) for n in minds_str.split(',')]
 
     # accept command line arguments for the minds over those in the config
     try:
         if len(sys.argv)>2:
-            mind_list = [get_mind(n) for n in sys.argv[1:] ]
+            mind_list = [(n,get_mind(n)) for n in sys.argv[1:] ]
     except (ImportError, IndexError):
         pass
 
