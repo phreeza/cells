@@ -105,8 +105,11 @@ class Game(object):
 
         for idx in xrange(len(self.minds)):
             (mx, my) = self.plant_population[idx].get_pos()
-            fuzzed_x = mx + random.randrange(-1, 2)
-            fuzzed_y = my + random.randrange(-1, 2)
+            fuzzed_x = mx
+            fuzzed_y = my
+            while fuzzed_x == mx and fuzzed_y == my:
+                fuzzed_x = mx + random.randrange(-1, 2)
+                fuzzed_y = my + random.randrange(-1, 2)
             self.agent_population.append(Agent(fuzzed_x, fuzzed_y, STARTING_ENERGY, idx,
                                                self.minds[idx], None))
             self.agent_map.insert(self.agent_population)
@@ -362,7 +365,7 @@ class Agent(object):
         self.alive = True
         self.team = team
         self.loaded = False
-        colors = [(255, 0, 0), (0, 0, 255), (255, 0, 255), (255, 255, 0)]
+        colors = [(255, 0, 0), (255, 255, 255), (255, 0, 255), (255, 255, 0)]
         self.color = colors[team % len(colors)]
         self.act = self.mind.act
 
