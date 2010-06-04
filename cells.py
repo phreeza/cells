@@ -75,17 +75,17 @@ class Game(object):
         self.clock = pygame.time.Clock()
         self.max_time = max_time
         self.tic = time.time()
-        self.terr = ScalarMapLayer(self.size)
+        self.terr = ScalarMapLayer(self.size, val=0, valtype=numpy.int_)
         self.terr.set_random(5)
         self.minds = [m[1].AgentMind for m in mind_list]
 
         self.energy_map = ScalarMapLayer(self.size)
         self.energy_map.set_random(SCATTERED_ENERGY)
 
-        self.plant_map = ObjectMapLayer(self.size, None)
+        self.plant_map = ObjectMapLayer(self.size)
         self.plant_population = []
 
-        self.agent_map = ObjectMapLayer(self.size, None)
+        self.agent_map = ObjectMapLayer(self.size)
         self.agent_population = []
         self.winner = None
         if symmetric:
@@ -258,7 +258,7 @@ class Game(object):
 
     def tick(self):
         self.disp.update(self.terr, self.agent_population,
-                         self.plant_population, self.energy_map)
+                         self.plant_population, self.agent_map, self.plant_map, self.energy_map)
         self.disp.flip()
         
         # test for spacebar pressed - if yes, restart
@@ -279,10 +279,10 @@ class Game(object):
 
 
 class MapLayer(object):
-    def __init__(self, size, val=0):
+    def __init__(self, size, val=0, valtype=numpy.object_):
         self.size = self.width, self.height = size
-        self.values = numpy.zeros(size, numpy.object_)
-        self.values[:] = val
+        self.values = numpy.empty(size, valtype)
+        self.values.fill(val)
 
     def get(self, x, y):
         if y >= 0 and x >= 0:
@@ -308,6 +308,13 @@ class ScalarMapLayer(MapLayer):
 
 
 class ObjectMapLayer(MapLayer):
+    def __init__(self, size):
+        MapLayer.__init__(self, size, None, numpy.object_)
+        self.surf = pygame.Surface(size)
+        self.surf.set_colorkey((0,0,0))
+        self.surf.fill((0,0,0))
+#        self.pixels = pygame.PixelArray(self.surf)
+
     def get_small_view_fast(self, x, y):
         ret = []
         get = self.get
@@ -346,6 +353,16 @@ class ObjectMapLayer(MapLayer):
     def insert(self, list):
         for o in list:
             self.set(o.x, o.y, o)
+
+    def set(self, x, y, val):
+        MapLayer.set(self, x, y, val)
+        if val is None:
+            self.surf.set_at((x, y), 0)
+#            self.pixels[x][y] = 0
+        else:
+            self.surf.set_at((x, y), val.color)
+#            self.pixels[x][y] = val.color
+
 
 # Use Cython version of get_small_view_fast if available.
 # Otherwise, don't bother folks about it.
@@ -487,11 +504,11 @@ class Display(object):
         def show_text(self, text, color, topleft):
             self.screen.blit(self.surface, (0, 0))
 
-    def update(self, terr, pop, plants, energy_map):
+    def update(self, terr, pop, plants, agent_map, plant_map, energy_map):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 sys.exit()
-        
+
         limit = 150 * numpy.ones_like(terr.values)
 
         r = numpy.minimum(limit, 20 * terr.values)
@@ -503,16 +520,32 @@ class Display(object):
         #todo: find out how many teams are playing
         team_pop = [0,0,0,0]
 
+        for team in xrange(len(team_pop)):
+            team_pop[team] = sum(1 for a in pop if a.team == team)
+        # we want an array just like values, but containing the colors instead of the agents...
+        # for a in pop:
+        #     img[(a.x, a.y)] = a.color
+        #     team_pop[a.team] += 1
+        #     if(not team_col[a.team] == False):
+        #         team_col[a.team] = a.color
 
+<<<<<<< Updated upstream
         for a in pop:
             img[(a.x, a.y)] = a.color
             team_pop[a.team] += 1
+=======
+        # for a in plants:
+        #     img[a.get_pos()] = self.green
+>>>>>>> Stashed changes
 
-        for a in plants:
-            img[a.get_pos()] = self.green
+        img_surf = pygame.surfarray.make_surface(img)
+        assert not img_surf.get_locked()
+        assert not agent_map.surf.get_locked()
+        img_surf.blit(agent_map.surf, (0,0))
+        img_surf.blit(plant_map.surf, (0,0))
 
         scale = self.scale
-        pygame.transform.scale(pygame.surfarray.make_surface(img),
+        pygame.transform.scale(img_surf,
                                self.size, self.screen)
         drawTop = 0
         for t in xrange(len(team_pop)):
@@ -524,6 +557,8 @@ class Display(object):
 
 
 class Plant(object):
+    color = (0, 255, 0)
+ 
     def __init__(self, x, y, eff):
         self.x = x
         self.y = y
