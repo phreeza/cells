@@ -524,11 +524,22 @@ class Display(object):
             pass
 
     def update(self, terr, pop, plants, agent_map, plant_map, energy_map):
+        # Slower version:
+        # img = ((numpy.minimum(150, 20 * terr.values) << 16) +
+        #       ((numpy.minimum(150, 10 * terr.values + 10.energy_map.values)) << 8))
         r = numpy.minimum(150, 20 * terr.values)
-        g = numpy.minimum(150, 10 * terr.values + 10 * energy_map.values)
- #       b = numpy.zeros_like(terr.values)
+        r <<= 16
 
-        img = (r << 16) + (g << 8) # + b
+#        g = numpy.minimum(150, 10 * terr.values + 10 * energy_map.values)
+        g = terr.values.copy()
+        g += energy_map.values
+        g *= 10
+        g = numpy.minimum(150, g)
+        g <<= 8
+
+        img = r
+        img += g
+ #       b = numpy.zeros_like(terr.values)
 
         #todo: find out how many teams are playing
         team_pop = [0,0,0,0]
@@ -536,7 +547,7 @@ class Display(object):
         for team in xrange(len(team_pop)):
             team_pop[team] = sum(1 for a in pop if a.team == team)
 
-        img_surf = pygame.Surface((self.width,self.height))
+        img_surf = pygame.Surface((self.width, self.height))
         pygame.surfarray.blit_array(img_surf, img)
         img_surf.blit(agent_map.surf, (0,0))
         img_surf.blit(plant_map.surf, (0,0))
