@@ -154,6 +154,7 @@ class Game(object):
         agent_map_get_small_view_fast = self.agent_map.get_small_view_fast
         plant_map_get_small_view_fast = self.plant_map.get_small_view_fast
         energy_map = self.energy_map
+        terr_map = self.terr
         WV = WorldView
         views_append = views.append
         for a in self.agent_population:
@@ -161,7 +162,7 @@ class Game(object):
             y = a.y
             agent_view = agent_map_get_small_view_fast(x, y)
             plant_view = plant_map_get_small_view_fast(x, y)
-            world_view = WV(a, agent_view, plant_view, energy_map)
+            world_view = WV(a, agent_view, plant_view, terr_map, energy_map)
             views_append((a, world_view))
 
         #get actions
@@ -444,10 +445,11 @@ class AgentView(object):
 
 
 class WorldView(object):
-    def __init__(self, me, agent_views, plant_views, energy_map):
+    def __init__(self, me, agent_views, plant_views, terr_map, energy_map):
         self.agent_views = agent_views
         self.plant_views = plant_views
         self.energy_map = energy_map
+        self.terr_map = terr_map
         self.me = me
 
     def get_me(self):
@@ -459,6 +461,9 @@ class WorldView(object):
     def get_plants(self):
         return self.plant_views
 
+    def get_terr(self):
+        return self.terr_map
+    
     def get_energy(self):
         return self.energy_map
 
