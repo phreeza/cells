@@ -268,7 +268,9 @@ class Game(object):
 
     def tick(self):
         self.disp.update(self.terr, self.agent_population,
-                         self.plant_population, self.agent_map, self.plant_map, self.energy_map)
+                         self.plant_population, self.agent_map,
+                         self.plant_map, self.energy_map, self.time,
+                         len(self.minds))
         self.disp.flip()
         
         # test for spacebar pressed - if yes, restart
@@ -512,18 +514,21 @@ class Display(object):
         self.background = self.background.convert()
         self.background.fill((150,150,150))
 
+        self.text = []
+
     if pygame.font:
         def show_text(self, text, color, topleft):
             font = pygame.font.Font(None, 24)
             text = font.render(text, 1, color)
             textpos = text.get_rect()
             textpos.topleft = topleft
-            self.surface.blit(text, textpos)
+            self.text.append((text, textpos))
     else:
         def show_text(self, text, color, topleft):
             pass
 
-    def update(self, terr, pop, plants, agent_map, plant_map, energy_map):
+    def update(self, terr, pop, plants, agent_map, plant_map, energy_map,
+               ticks, nteams):
         # Slower version:
         # img = ((numpy.minimum(150, 20 * terr.values) << 16) +
         #       ((numpy.minimum(150, 10 * terr.values + 10.energy_map.values)) << 8))
@@ -540,12 +545,6 @@ class Display(object):
         img += g
  #       b = numpy.zeros_like(terr.values)
 
-        #todo: find out how many teams are playing
-        team_pop = [0,0,0,0]
-
-        for team in xrange(len(team_pop)):
-            team_pop[team] = sum(1 for a in pop if a.team == team)
-
         img_surf = pygame.Surface((self.width, self.height))
         pygame.surfarray.blit_array(img_surf, img)
         img_surf.blit(agent_map.surf, (0,0))
@@ -554,10 +553,21 @@ class Display(object):
         scale = self.scale
         pygame.transform.scale(img_surf,
                                self.size, self.screen)
-        drawTop = 0
-        for t in xrange(len(team_pop)):
-            drawTop += 20
-            self.show_text(str(team_pop[t]), TEAM_COLORS[t], (10, drawTop))
+        if not ticks % 60:
+            #todo: find out how many teams are playing
+            team_pop = [0] * nteams
+
+            for team in xrange(nteams):
+                team_pop[team] = sum(1 for a in pop if a.team == team)
+
+            self.text = []
+            drawTop = 0
+            for t in xrange(nteams):
+                drawTop += 20
+                self.show_text(str(team_pop[t]), TEAM_COLORS[t], (10, drawTop))
+
+        for text, textpos in self.text:
+            self.surface.blit(text, textpos)
 
     def flip(self):
         pygame.display.flip()
