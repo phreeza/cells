@@ -524,32 +524,20 @@ class Display(object):
             pass
 
     def update(self, terr, pop, plants, agent_map, plant_map, energy_map):
-        limit = 150 * numpy.ones_like(terr.values)
+        r = numpy.minimum(150, 20 * terr.values)
+        g = numpy.minimum(150, 10 * terr.values + 10 * energy_map.values)
+ #       b = numpy.zeros_like(terr.values)
 
-        r = numpy.minimum(limit, 20 * terr.values)
-        g = numpy.minimum(limit, 10 * terr.values + 10 * energy_map.values)
-        b = numpy.zeros_like(terr.values)
-
-        img = numpy.dstack((r, g, b))
+        img = (r << 16) + (g << 8) # + b
 
         #todo: find out how many teams are playing
         team_pop = [0,0,0,0]
 
         for team in xrange(len(team_pop)):
             team_pop[team] = sum(1 for a in pop if a.team == team)
-        # we want an array just like values, but containing the colors instead of the agents...
-        # for a in pop:
-        #     img[(a.x, a.y)] = a.color
-        #     team_pop[a.team] += 1
-        #     if(not team_col[a.team] == False):
-        #         team_col[a.team] = a.color
 
-        # for a in plants:
-        #     img[a.get_pos()] = self.green
-
-        img_surf = pygame.surfarray.make_surface(img)
-        assert not img_surf.get_locked()
-        assert not agent_map.surf.get_locked()
+        img_surf = pygame.Surface((self.width,self.height))
+        pygame.surfarray.blit_array(img_surf, img)
         img_surf.blit(agent_map.surf, (0,0))
         img_surf.blit(plant_map.surf, (0,0))
 
