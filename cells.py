@@ -531,8 +531,7 @@ class Display(object):
         r <<= 16
 
 #        g = numpy.minimum(150, 10 * terr.values + 10 * energy_map.values)
-        g = terr.values.copy()
-        g += energy_map.values
+        g = terr.values + energy_map.values
         g *= 10
         g = numpy.minimum(150, g)
         g <<= 8
