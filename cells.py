@@ -262,10 +262,12 @@ class Game(object):
         self.disp.flip()
         
         # test for spacebar pressed - if yes, restart
-        for event in pygame.event.get():
-            if (event.type == pygame.locals.KEYUP and
-                event.key == pygame.locals.K_SPACE):
+        for event in pygame.event.get(pygame.locals.KEYUP):
+            if event.key == pygame.locals.K_SPACE:
                 self.winner = -1
+        if pygame.event.get(pygame.locals.QUIT):
+            sys.exit()
+        pygame.event.pump()
 
         self.run_agents()
         self.run_plants()
@@ -488,10 +490,6 @@ class Display(object):
             self.screen.blit(self.surface, (0, 0))
 
     def update(self, terr, pop, plants, energy_map):
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                sys.exit()
-        
         limit = 150 * numpy.ones_like(terr.values)
 
         r = numpy.minimum(limit, 20 * terr.values)
