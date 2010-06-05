@@ -14,6 +14,8 @@ import time
 import numpy
 import pygame, pygame.locals
 
+from terrain.generator import terrain_generator
+
 if not pygame.font: print 'Warning, fonts disabled'
 
 try:
@@ -53,11 +55,11 @@ class Game(object):
         self.max_time = max_time
         self.tic = time.time()
         self.terr = ScalarMapLayer(self.size)
-        self.terr.set_random(5)
+        self.terr.set_simple(8)
         self.minds = [m[1].AgentMind for m in mind_list]
 
         self.energy_map = ScalarMapLayer(self.size)
-        self.energy_map.set_random(10)
+        self.energy_map.set_streak(4)
 
         self.plant_map = ObjectMapLayer(self.size, None)
         self.plant_population = []
@@ -247,7 +249,13 @@ class MapLayer(object):
 
 class ScalarMapLayer(MapLayer):
     def set_random(self, range):
-        self.values = numpy.random.random_integers(0, range - 1, self.size)
+        self.values = terrain_generator().create_random(self.size, range)
+
+    def set_streak(self, range):
+        self.values = terrain_generator().create_streak(self.size, range)
+
+    def set_simple(self, range):
+        self.values = terrain_generator().create_simple(self.size, range)
 
     def change(self, x, y, val):
         self.values[x, y] += val
