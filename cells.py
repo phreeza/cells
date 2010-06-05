@@ -597,5 +597,5 @@ if __name__ == "__main__":
     main()
     while True:
         game = Game(bounds, mind_list, symmetric, -1)
-        while game.winner == None:
+        while game.winner is None:
             game.tick()
