@@ -23,10 +23,24 @@ import random, cells
 
 import numpy
 
-import genes
+from genes import InitializerGene, make_normally_perturbed_gene
+
+
+DesiredEnergyGene = make_normally_perturbed_gene(5, cells.ATTACK_POWER,
+                                                 cells.ENERGY_CAP)
+FieldSpawnEnergyGene = make_normally_perturbed_gene(5, cells.SPAWN_MIN_ENERGY,
+                                                    cells.ENERGY_CAP)
+PlantSpawnEnergyGene = make_normally_perturbed_gene(5, cells.SPAWN_MIN_ENERGY,
+                                                    cells.ENERGY_CAP)
+
+
+def debug(s):
+    #print s
+    pass
 
 class MessageType(object):
     ATTACK = 0
+
 
 class AgentMind(object):
     def __init__(self, args):
@@ -39,14 +53,23 @@ class AgentMind(object):
         self.my_plant = None
         self.bumps = 0
         self.last_pos = (-1, -1)
+        self.apoptosis = random.randrange(100, 201)
 
         if args is None:
             self.strain = 0
             self.scout = False
+            self.genes = genes = {}
+            genes['desired_energy'] = DesiredEnergyGene(
+                InitializerGene(2 * cells.SPAWN_MIN_ENERGY))
+            genes['field_spawn_energy'] = FieldSpawnEnergyGene(
+                InitializerGene(4 * cells.ENERGY_CAP / 5))
+            genes['plant_spawn_energy'] = PlantSpawnEnergyGene(
+                InitializerGene(2 * cells.SPAWN_MIN_ENERGY))
         else:
             parent = args[0]
             self.strain = parent.strain
             # Don't come to the rescue, continue looking for plants & bad guys.
+            self.genes = dict((k, v.spawn()) for (k,v) in parent.genes.iteritems())
             if parent.my_plant:
                 self.scout = (random.random() > 0.9)
             else:
@@ -64,10 +87,13 @@ class AgentMind(object):
 
     def smart_spawn(self, me, view):
         grid = self.get_available_space_grid(me, view)
+        ret = []
         for x in xrange(3):
             for y in range(3):
                 if grid[x,y]:
-                    return (x-1, y-1)
+                    ret.append((x-1, y-1))
+        if ret:
+            return random.choice(ret)
         return (-1, -1)
 
     def would_bump(self, me, view, dir_x, dir_y):
@@ -95,6 +121,10 @@ class AgentMind(object):
         if self.x is None:
             self.x = random.randrange(view.energy_map.width) - me.x
             self.y = random.randrange(view.energy_map.height) - me.y
+
+        if self.apoptosis <= 0:
+            return cells.Action(cells.ACT_MOVE, (0, 0))
+
         # Attack anyone next to me, but first send out the distress message with my position
         for a in view.get_agents():
             if (a.get_team() != me.get_team()):
@@ -103,9 +133,12 @@ class AgentMind(object):
 
         # Eat any energy I find until I am 'full'. The cost of eating
         # is 1, so don't eat just 1 energy.
-        if view.get_energy().get(mx, my) > 1:
-            if (me.energy <= 50):
+        if self.my_plant is None and view.get_energy().get(mx, my) > 1:
+            if me.energy <= self.genes['desired_energy'].val:
                 return cells.Action(cells.ACT_EAT)
+            else:
+                debug('Not eating. Have %s which is above %s' %
+                      (me.energy, self.genes['desired_energy'].val))
             if (me.energy < self.defense and (random.random()>0.3)):
                 return cells.Action(cells.ACT_EAT)
 
@@ -113,24 +146,30 @@ class AgentMind(object):
         # If there is a plant near by go to it and spawn all I can
         if self.my_plant is None :
             plants = view.get_plants()
-            if plants :
+            if plants:
                 self.my_plant = plants[0]
                 self.x = self.y = 0
                 self.strain = self.my_plant.x * 41 + self.my_plant.y
+                debug('attached to plant, strain %s' % self.strain)
+        else:
+            self.apoptosis -= 1
+            if self.apoptosis <= 0:
+                self.my_plant = None
+                return cells.Action(cells.ACT_RELEASE, (mx + 1, my, me.energy - 1))
+            
 
-        # Current rules don't make carrying around excess energy
-        # worthwhile.  Generates a very nice "They eat their
-        # wounded?!" effect. Also burns extra energy so the enemy
-        # can't use it.
-        # Spawning takes 25 of the energy and gives it
-        # to the child and reserves the other 25 for the child's death
-        # drop. In addition, the action costs 1 unit. Therefore, we
-        # can't create energy by spawning...
-        if me.energy >= 51:
+        if self.my_plant is None:
+            spawn_threshold = self.genes['field_spawn_energy'].val
+        else:
+            spawn_threshold = self.genes['plant_spawn_energy'].val
+        if me.energy >= spawn_threshold:
             spawn_x, spawn_y = self.smart_spawn(me, view)
             return cells.Action(cells.ACT_SPAWN,
                                 (me.x + spawn_x, me.y + spawn_y, self))
+        elif self.my_plant:
+            return cells.Action(cells.ACT_EAT)
 
+        
         # If I get the message of help go and rescue!
         if not self.step and not self.scout and random.random() > 0.1:
             ax = 0;
