@@ -503,7 +503,7 @@ class Display(object):
         self.size = (self.width * scale, self.height * scale)
         pygame.init()
         self.screen  = pygame.display.set_mode(self.size)
-        self.surface = pygame.display.get_surface()
+        self.surface = self.screen
         pygame.display.set_caption("Cells")
 
         self.background = pygame.Surface(self.screen.get_size())
@@ -517,10 +517,9 @@ class Display(object):
             textpos = text.get_rect()
             textpos.topleft = topleft
             self.surface.blit(text, textpos)
-            self.screen.blit(self.surface, (0, 0))
     else:
         def show_text(self, text, color, topleft):
-            self.screen.blit(self.surface, (0, 0))
+            pass
 
     def update(self, terr, pop, plants, agent_map, plant_map, energy_map):
         for event in pygame.event.get():
