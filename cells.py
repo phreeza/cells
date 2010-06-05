@@ -102,8 +102,11 @@ class Game(object):
             if symmetric:
                 p = Plant(my, mx, eff)
                 self.plant_population.append(p)
+        self.plant_map.lock()
         self.plant_map.insert(self.plant_population)
+        self.plant_map.unlock()
 
+        self.agent_map.lock()
         for idx in xrange(len(self.minds)):
             (mx, my) = self.plant_population[idx].get_pos()
             fuzzed_x = mx
@@ -114,6 +117,7 @@ class Game(object):
             self.agent_population.append(Agent(fuzzed_x, fuzzed_y, STARTING_ENERGY, idx,
                                                self.minds[idx], None))
             self.agent_map.insert(self.agent_population)
+        self.agent_map.unlock()
 
     def run_plants(self):
         for p in self.plant_population:
@@ -124,6 +128,7 @@ class Game(object):
                     adj_y = y + dy
                     if self.energy_map.in_range(adj_x, adj_y):
                         self.energy_map.change(adj_x, adj_y, p.get_eff())
+
 
     def add_agent(self, a):
         self.agent_population.append(a)
@@ -164,6 +169,9 @@ class Game(object):
         actions = [(a, a.act(v, messages[a.team])) for (a, v) in views]
         actions_dict = dict(actions)
         random.shuffle(actions)
+
+
+        self.agent_map.lock()
 
         #apply agent actions
         for (agent, action) in actions:
@@ -244,6 +252,8 @@ class Game(object):
             else :
                 team[agent.team] += 1
 
+        self.agent_map.unlock()
+
         if not team[0]:
             print "Winner is %s (blue) in: %s" % (self.mind_list[1][1].name,
                                                   str(self.time))
@@ -313,7 +323,14 @@ class ObjectMapLayer(MapLayer):
         self.surf = pygame.Surface(size)
         self.surf.set_colorkey((0,0,0))
         self.surf.fill((0,0,0))
+        self.pixels = None
 #        self.pixels = pygame.PixelArray(self.surf)
+
+    def lock(self):
+        self.pixels = pygame.surfarray.pixels2d(self.surf)
+
+    def unlock(self):
+        self.pixels = None
 
     def get_small_view_fast(self, x, y):
         ret = []
@@ -357,11 +374,11 @@ class ObjectMapLayer(MapLayer):
     def set(self, x, y, val):
         MapLayer.set(self, x, y, val)
         if val is None:
-            self.surf.set_at((x, y), 0)
-#            self.pixels[x][y] = 0
+            self.pixels[x][y] = 0
+#            self.surf.set_at((x, y), 0)
         else:
-            self.surf.set_at((x, y), val.color)
-#            self.pixels[x][y] = val.color
+            self.pixels[x][y] = val.color
+#            self.surf.set_at((x, y), val.color)
 
 
 # Use Cython version of get_small_view_fast if available.
@@ -375,6 +392,7 @@ except ImportError:
     pass
 
 TEAM_COLORS = [(255, 0, 0), (255, 255, 255), (255, 0, 255), (255, 255, 0)]
+TEAM_COLORS_FAST = [0xFF0000, 0xFFFFFF, 0xFF00FF, 0xFFFF00]
 
 class Agent(object):
     __slots__ = ['x', 'y', 'mind', 'energy', 'alive', 'team', 'loaded', 'color',
@@ -387,7 +405,7 @@ class Agent(object):
         self.alive = True
         self.team = team
         self.loaded = False
-        self.color = TEAM_COLORS[team % len(TEAM_COLORS)]
+        self.color = TEAM_COLORS_FAST[team % len(TEAM_COLORS_FAST)]
         self.act = self.mind.act
 
     def attack(self, other):
@@ -529,14 +547,8 @@ class Display(object):
         #     if(not team_col[a.team] == False):
         #         team_col[a.team] = a.color
 
-<<<<<<< Updated upstream
-        for a in pop:
-            img[(a.x, a.y)] = a.color
-            team_pop[a.team] += 1
-=======
         # for a in plants:
         #     img[a.get_pos()] = self.green
->>>>>>> Stashed changes
 
         img_surf = pygame.surfarray.make_surface(img)
         assert not img_surf.get_locked()
@@ -557,7 +569,7 @@ class Display(object):
 
 
 class Plant(object):
-    color = (0, 255, 0)
+    color = 0x00FF00
  
     def __init__(self, x, y, eff):
         self.x = x
