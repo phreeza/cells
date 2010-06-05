@@ -1,7 +1,7 @@
 import numpy
 import random
 
-# TODO: do something about the lack of symmetric
+# TODO: do something about the lack of symmetry
 
 class terrain_generator():
     def create_random(self, size, range):
