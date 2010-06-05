@@ -33,6 +33,10 @@ def get_mind(name):
 
 STARTING_ENERGY = 20
 SCATTERED_ENERGY = 5 
+
+#Plant energy output. Remember, this should always be less
+#than ATTACK_POWER, because otherwise cells sitting on the plant edge
+#might become invincible.
 PLANT_MAX_OUTPUT = 20
 PLANT_MIN_OUTPUT = 5
 
@@ -40,13 +44,15 @@ PLANT_MIN_OUTPUT = 5
 #It can not be accessed by the cells, think of it as: they can't
 #eat their own body. It is released again at death.
 BODY_ENERGY  = 25
-ATTACK_POWER = 20
-ENERGY_CAP   = 500
+ATTACK_POWER = 30
+#Amount by which attack power is modified for each 1 height difference.
+ATTACK_TERR_CHANGE = 2
+ENERGY_CAP   = 2500
 
 #SPAWN_COST is the energy it takes to seperate two cells from each other.
 #It is lost forever, not to be confused with the BODY_ENERGY of the new cell.
 SPAWN_COST      = 20
-SUSTAIN_COST    = 1
+SUSTAIN_COST    = 0
 MOVE_COST       = 1    
 #MESSAGE_COST    = 0    
 
@@ -217,13 +223,18 @@ class Game(object):
                 next_pos = get_next_move(agent.x, agent.y, act_x, act_y)
                 new_x, new_y = next_pos
                 victim = self.agent_map.get(act_x, act_y)
+                terr_delta = (self.terr.get(agent.x, agent.y) 
+                            - self.terr.get(act_x, act_y))
                 if (victim is not None and victim.alive and
                     next_pos == act_data):
-                    agent.attack(victim)
+                    agent.attack(victim, terr_delta)
                     #If both agents attack each other, both loose double energy
                     #Think twice before attacking 
-                    if actions_dict[victim].type == ACT_ATTACK:
-                        victim.attack(agent)
+                    try:
+                        if actions_dict[victim].type == ACT_ATTACK:
+                            victim.attack(agent, -terr_delta)
+                    except:
+                        pass
                      
             elif action.type == ACT_LIFT:
                 if not agent.loaded and self.terr.get(agent.x, agent.y) > 0:
@@ -369,10 +380,10 @@ class Agent(object):
         self.color = colors[team % len(colors)]
         self.act = self.mind.act
 
-    def attack(self, other):
+    def attack(self, other, offset = 0):
         if not other:
             return False
-        other.energy -= ATTACK_POWER
+        other.energy -= ATTACK_POWER + ATTACK_TERR_CHANGE * offset
         return other.energy <= 0
 
     def get_team(self):
