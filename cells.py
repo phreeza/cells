@@ -293,6 +293,8 @@ class Game(object):
         if alive == 0 or (self.max_time > 0 and self.time > self.max_time):
             print "It's a draw!"
             self.winner = -1
+
+        self.agent_map.unlock()
         
     def tick(self):
         # Space starts new game
