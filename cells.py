@@ -60,12 +60,15 @@ config = ConfigParser.RawConfigParser()
 
 
 def get_next_move(old_x, old_y, x, y):
+    ''' Takes the current position, old_x and old_y, and a desired future position, x and y,
+    and returns the position (x,y) resulting from a unit move toward the future position.'''
     dx = numpy.sign(x - old_x)
     dy = numpy.sign(y - old_y)
     return (old_x + dx, old_y + dy)
 
 
 class Game(object):
+    ''' Represents a game between different minds. '''
     def __init__(self, bounds, mind_list, symmetric, max_time):
         self.size = self.width, self.height = (bounds, bounds)
         self.mind_list = mind_list
@@ -91,7 +94,8 @@ class Game(object):
             self.n_plants = 7
         else:
             self.n_plants = 14
-
+            
+        # Add some randomly placed plants to the map. 
         for x in xrange(self.n_plants):
             mx = random.randrange(1, self.width - 1)
             my = random.randrange(1, self.height - 1)
@@ -103,7 +107,9 @@ class Game(object):
                 self.plant_population.append(p)
         self.plant_map.insert(self.plant_population)
 
+        # Create an agent for each mind and place on map at a different plant.
         for idx in xrange(len(self.minds)):
+            # BUG: Number of minds could exceed number of plants?
             (mx, my) = self.plant_population[idx].get_pos()
             fuzzed_x = mx
             fuzzed_y = my
@@ -115,6 +121,8 @@ class Game(object):
             self.agent_map.insert(self.agent_population)
 
     def run_plants(self):
+        ''' Increases energy at and around (adjacent position) for each plant.
+        Increase in energy is equal to the eff(?) value of each the plant.'''
         for p in self.plant_population:
             (x, y) = p.get_pos()
             for dx in (-1, 0, 1):
@@ -125,10 +133,13 @@ class Game(object):
                         self.energy_map.change(adj_x, adj_y, p.get_eff())
 
     def add_agent(self, a):
+        ''' Adds an agent to the game. '''
         self.agent_population.append(a)
         self.agent_map.set(a.x, a.y, a)
 
     def del_agent(self, a):
+        ''' Kills the agent (if not already dead), removes them from the game and
+        drops any load they were carrying in there previously occupied position. '''
         self.agent_population.remove(a)
         self.agent_map.set(a.x, a.y, None)
         a.alive = False
@@ -137,6 +148,8 @@ class Game(object):
             self.terr.change(a.x, a.y, 1)
 
     def move_agent(self, a, x, y):
+        ''' Moves agent, a, to new position (x,y) unless difference in terrain levels between
+        its current position and new position is greater than 4.'''
         if abs(self.terr.get(x, y)-self.terr.get(a.x, a.y)) <= 4:
             self.agent_map.set(a.x, a.y, None)
             self.agent_map.set(x, y, a)
@@ -144,6 +157,7 @@ class Game(object):
             a.y = y
 
     def run_agents(self):
+        # Create a list containing the view for each agent in the population.
         views = []
         agent_map_get_small_view_fast = self.agent_map.get_small_view_fast
         plant_map_get_small_view_fast = self.plant_map.get_small_view_fast
@@ -159,27 +173,28 @@ class Game(object):
             world_view = WV(a, agent_view, plant_view, terr_map, energy_map)
             views_append((a, world_view))
 
-        #get actions
+        # Create a list containing the action for each agent, where each agent determines its actions based
+        # on its view of the world and messages from its team.
         messages = self.messages
         actions = [(a, a.act(v, messages[a.team])) for (a, v) in views]
         actions_dict = dict(actions)
         random.shuffle(actions)
 
-        #apply agent actions
+        # Apply the action for each agent - in doing so agent uses up 1 energy unit.
         for (agent, action) in actions:
             #This is the cost of mere survival
             agent.energy -= SUSTAIN_COST
 
-            if action.type == ACT_MOVE:
+            if action.type == ACT_MOVE: # Changes position of agent.
                 act_x, act_y = action.get_data()
                 (new_x, new_y) = get_next_move(agent.x, agent.y,
                                                act_x, act_y)
-                #Only move if the target field is free
+                # Move to the new position if it is in range and it's not currently occupied by another agent.
                 if (self.agent_map.in_range(new_x, new_y) and
                     not self.agent_map.get(new_x, new_y)):
                     self.move_agent(agent, new_x, new_y)
                     agent.energy -= MOVE_COST
-            elif action.type == ACT_SPAWN:
+            elif action.type == ACT_SPAWN: # Creates new agents and uses additional 50 energy units.
                 act_x, act_y = action.get_data()[:2]
                 (new_x, new_y) = get_next_move(agent.x, agent.y,
                                                act_x, act_y)
@@ -235,12 +250,13 @@ class Game(object):
                 if not agent.loaded and self.terr.get(agent.x, agent.y) > 0:
                     agent.loaded = True
                     self.terr.change(agent.x, agent.y, -1)
+                    
             elif action.type == ACT_DROP:
                 if agent.loaded:
                     agent.loaded = False
                     self.terr.change(agent.x, agent.y, 1)
 
-        #let agents die if their energy is too low
+        # Kill all agents with negative energy.
         team = [0 for n in self.minds]
         for (agent, action) in actions:
             if agent.energy < 0 and agent.alive:
@@ -249,6 +265,8 @@ class Game(object):
             else :
                 team[agent.team] += 1
 
+        # Team wins (and game ends) if opposition team has 0 agents remaining.
+        # Draw if time exceeds time limit.
         if not team[0]:
             print "Winner is %s (blue) in: %s" % (self.mind_list[1][1].name,
                                                   str(self.time))
@@ -394,9 +412,8 @@ class Agent(object):
     def get_view(self):
         return AgentView(self)
 
-
+# Actions available to an agent on each turn.
 ACT_SPAWN, ACT_MOVE, ACT_EAT, ACT_RELEASE, ACT_ATTACK, ACT_LIFT, ACT_DROP = range(7)
-
 
 class Action(object):
     '''
