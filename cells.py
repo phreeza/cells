@@ -81,7 +81,7 @@ class Game(object):
         self.max_time = max_time
         self.tic = time.time()
         self.terr = ScalarMapLayer(self.size)
-        self.terr.set_simple(10)
+        self.terr.set_perlin(10)
         self.minds = [m[1].AgentMind for m in mind_list]
 
         self.energy_map = ScalarMapLayer(self.size)
@@ -356,6 +356,10 @@ class ScalarMapLayer(MapLayer):
 
     def set_simple(self, range):
         self.values = terrain_generator().create_simple(self.size, range, symmetric)
+    
+    def set_perlin(self, range):
+        self.values = terrain_generator().create_perlin(self.size, range, symmetric)
+
 
     def change(self, x, y, val):
         self.values[x, y] += val

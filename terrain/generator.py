@@ -1,5 +1,6 @@
 import numpy
 import random
+import math
 
 class terrain_generator():
     def create_random(self, size, range, symmetric=False):
@@ -131,6 +132,36 @@ class terrain_generator():
         if symmetric:
             ret = self.make_symmetric(ret)
         return numpy.array(ret)
+    
+    def create_perlin(self, size, roughness, symmetric = False):
+        (width, height) = size
+        values = numpy.zeros(size)
+        noise = numpy.random.random_sample((width+1, height+1))
+        octaves = (256, 8, 2)
+        for y in range(height):
+            for x in range(width):
+                if symmetric and x < y:
+                    values[x][y] = values[y][x]
+                    continue
+                nr = 1
+                for i in octaves:
+                    top = y/i
+                    left = x/i
+                    my = float(y % i) / i
+                    mx = float(x % i) / i
+                    values[x][y] += self.interpolate(noise[top][left], noise[top][left+1], noise[top+1][left], noise[top+1][left+1], mx, my) * math.pow(0.5, nr)
+                    nr += 1
+                values[x][y] = int(values[x][y] * roughness)
+        return numpy.array(values,dtype=int)
+    
+    #Some helper functions.
+    def interpolate(self, p1, p2, p3, p4, x, y):
+        top = self.interpolate1d(p1, p2, x)
+        bottom = self.interpolate1d(p3, p4, x)
+        return self.interpolate1d(top, bottom, y)
+        
+    def interpolate1d(self, p1, p2, mu):
+        return p1*(1-mu)+p2*mu
 
     def add_random_range(self, x, rand_min, rand_max):
         """Returns a number that is between x + rand_min and x + rand_max (inclusive)"""
