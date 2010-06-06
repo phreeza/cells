@@ -47,8 +47,8 @@ ENERGY_CAP   = 2500
 #It is lost forever, not to be confused with the BODY_ENERGY of the new cell.
 SPAWN_COST      = 20
 SUSTAIN_COST    = 0
-MOVE_COST       = 1    
-#MESSAGE_COST    = 0    
+MOVE_COST       = 1
+MESSAGE_COST    = 1
 
 #BODY_ENERGY + SPAWN_COST is invested to create a new cell. What remains is split evenly.
 #With this model we only need to make sure a cell can't commit suicide by spawning.
@@ -161,6 +161,7 @@ class Game(object):
 
         #get actions
         messages = self.messages
+        new_message_list = [[] for i in self.mind_list] 
         actions = [(a, a.act(v, messages[a.team])) for (a, v) in views]
         actions_dict = dict(actions)
         random.shuffle(actions)
@@ -239,6 +240,9 @@ class Game(object):
                 if agent.loaded:
                     agent.loaded = False
                     self.terr.change(agent.x, agent.y, 1)
+            elif action.type == ACT_MESSAGE:
+                agent.energy -= MESSAGE_COST
+                new_message_list[agent.team].append(action.get_data())
 
         #let agents die if their energy is too low
         team = [0 for n in self.minds]
@@ -261,6 +265,9 @@ class Game(object):
             print "It's a draw!"
             self.winner = -1
 
+        for msg in zip(new_message_list, self.messages):
+            msg[1].update(msg[0])
+
     def tick(self):
         self.disp.update(self.terr, self.agent_population,
                          self.plant_population, self.energy_map)
@@ -274,8 +281,6 @@ class Game(object):
 
         self.run_agents()
         self.run_plants()
-        for msg in self.messages:
-            msg.update()
         self.time += 1
         self.tic = time.time()
 
@@ -551,15 +556,10 @@ class Plant(object):
 
 class MessageQueue(object):
     def __init__(self):
-        self.__inlist = []
         self.__outlist = []
 
-    def update(self):
-        self.__outlist = self.__inlist
-        self.__inlist = []
-
-    def send_message(self, m):
-        self.__inlist.append(m)
+    def update(self, newlist):
+        self.__outlist = newlist
 
     def get_messages(self):
         return self.__outlist
