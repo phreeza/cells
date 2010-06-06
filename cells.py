@@ -55,11 +55,11 @@ class Game(object):
         self.max_time = max_time
         self.tic = time.time()
         self.terr = ScalarMapLayer(self.size)
-        self.terr.set_simple(8)
+        self.terr.set_simple(10)
         self.minds = [m[1].AgentMind for m in mind_list]
 
         self.energy_map = ScalarMapLayer(self.size)
-        self.energy_map.set_streak(4)
+        self.energy_map.set_streak(10)
 
         self.plant_map = ObjectMapLayer(self.size, None)
         self.plant_population = []
@@ -249,13 +249,13 @@ class MapLayer(object):
 
 class ScalarMapLayer(MapLayer):
     def set_random(self, range):
-        self.values = terrain_generator().create_random(self.size, range)
+        self.values = terrain_generator().create_random(self.size, range, symmetric)
 
     def set_streak(self, range):
-        self.values = terrain_generator().create_streak(self.size, range)
+        self.values = terrain_generator().create_streak(self.size, range, symmetric)
 
     def set_simple(self, range):
-        self.values = terrain_generator().create_simple(self.size, range)
+        self.values = terrain_generator().create_simple(self.size, range, symmetric)
 
     def change(self, x, y, val):
         self.values[x, y] += val
