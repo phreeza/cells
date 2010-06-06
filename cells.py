@@ -82,14 +82,14 @@ class Game(object):
         self.max_time = max_time
         self.tic = time.time()
         self.terr = ScalarMapLayer(self.size)
-        self.terr.set_perlin(10)
+        self.terr.set_perlin(10, symmetric)
         self.minds = [m[1].AgentMind for m in mind_list]
 
         self.show_energy = True
         self.show_agents = True
 
         self.energy_map = ScalarMapLayer(self.size)
-        self.energy_map.set_streak(SCATTERED_ENERGY)
+        self.energy_map.set_streak(SCATTERED_ENERGY, symmetric)
 
         self.plant_map = ObjectMapLayer(self.size)
         self.plant_population = []
@@ -363,16 +363,16 @@ class MapLayer(object):
 
 
 class ScalarMapLayer(MapLayer):
-    def set_random(self, range):
+    def set_random(self, range, symmetric = True):
         self.values = terrain_generator().create_random(self.size, range, symmetric)
 
-    def set_streak(self, range):
+    def set_streak(self, range, symmetric = True):
         self.values = terrain_generator().create_streak(self.size, range, symmetric)
 
-    def set_simple(self, range):
+    def set_simple(self, range, symmetric = True):
         self.values = terrain_generator().create_simple(self.size, range, symmetric)
     
-    def set_perlin(self, range):
+    def set_perlin(self, range, symmetric = True):
         self.values = terrain_generator().create_perlin(self.size, range, symmetric)
 
 

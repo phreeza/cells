@@ -56,7 +56,7 @@ if __name__ == "__main__":
     tournament_list = [[mind_list[a], mind_list[b]] for a in range(len(mind_list)) for b in range (a)]
     for n in range(4):
         for pair in tournament_list:
-            game = Game(bounds, pair, symmetric, 1000)
+            game = Game(bounds, pair, symmetric, 5000)
             while game.winner == None:
                 game.tick()
             if game.winner >= 0:
@@ -69,4 +69,10 @@ if __name__ == "__main__":
                 scores[idx] += 1
             print scores
             print [m[0] for m in mind_list]
-
+    names = [m[0] for m in mind_list]
+    name_score = zip(names,scores)
+    f = open("scores.csv",'w')
+    srt = sorted(name_score,key=lambda ns: -ns[1])
+    for x in srt:
+        f.write("%s;%s\n" %(x[0],str(x[1])))
+    f.close()
