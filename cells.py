@@ -273,22 +273,27 @@ class Game(object):
                 self.del_agent(agent)
             else :
                 team[agent.team] += 1
-
+            
         # Team wins (and game ends) if opposition team has 0 agents remaining.
         # Draw if time exceeds time limit.
-        self.agent_map.unlock()
-        if not team[0]:
-            print "Winner is %s (blue) in: %s" % (self.mind_list[1][1].name,
-                                                  str(self.time))
-            self.winner = 1
-        if not team[1]:
-            print "Winner is %s (red) in: %s" % (self.mind_list[0][1].name,
-                                               str(self.time))
-            self.winner = 0
-        if self.max_time > 0 and self.time > self.max_time:
+        winner = 0
+        alive = 0
+        for t in team:
+            if t != 0:
+                alive += 1
+            else:
+                if alive == 0:
+                    winner += 1
+        
+        if alive == 1:
+            colors = ["red", "white", "purple", "yellow"]
+            print "Winner is %s (%s) in %s" % (self.mind_list[winner][1].name, colors[winner], str(self.time))
+            self.winner = winner
+        
+        if alive == 0 or (self.max_time > 0 and self.time > self.max_time):
             print "It's a draw!"
             self.winner = -1
-
+        
     def tick(self):
         # Space starts new game
         # q or close button will quit the game
