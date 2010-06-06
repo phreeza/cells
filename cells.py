@@ -27,6 +27,7 @@ def get_mind(name):
     return mind
 
 
+
 STARTING_ENERGY = 20
 SCATTERED_ENERGY = 10 
 
@@ -83,6 +84,9 @@ class Game(object):
         self.terr = ScalarMapLayer(self.size)
         self.terr.set_perlin(10)
         self.minds = [m[1].AgentMind for m in mind_list]
+
+        self.show_energy = True
+        self.show_agents = True
 
         self.energy_map = ScalarMapLayer(self.size)
         self.energy_map.set_streak(SCATTERED_ENERGY)
@@ -305,13 +309,17 @@ class Game(object):
                     self.winner = -1
                 elif event.key == pygame.locals.K_q:
                      sys.exit()
+                elif event.key == pygame.locals.K_e:
+                     self.show_energy = not self.show_energy
+                elif event.key == pygame.locals.K_a:
+                     self.show_agents = not self.show_agents
             elif event.type == pygame.QUIT:
                 sys.exit()
 
         self.disp.update(self.terr, self.agent_population,
                          self.plant_population, self.agent_map,
                          self.plant_map, self.energy_map, self.time,
-                         len(self.minds))
+                         len(self.minds), self.show_energy, self.show_agents)
         
         # test for spacebar pressed - if yes, restart
         for event in pygame.event.get(pygame.locals.KEYUP):
@@ -582,26 +590,30 @@ class Display(object):
             pass
 
     def update(self, terr, pop, plants, agent_map, plant_map, energy_map,
-               ticks, nteams):
+               ticks, nteams, show_energy, show_agents):
         # Slower version:
         # img = ((numpy.minimum(150, 20 * terr.values) << 16) +
         #       ((numpy.minimum(150, 10 * terr.values + 10.energy_map.values)) << 8))
+         
         r = numpy.minimum(150, 20 * terr.values)
         r <<= 16
 
 #        g = numpy.minimum(150, 10 * terr.values + 10 * energy_map.values)
-        g = terr.values + energy_map.values
-        g *= 10
-        g = numpy.minimum(150, g)
-        g <<= 8
+        if show_energy:
+            g = terr.values + energy_map.values
+            g *= 10
+            g = numpy.minimum(150, g)
+            g <<= 8
 
         img = r
-        img += g
+        if show_energy:
+            img += g
  #       b = numpy.zeros_like(terr.values)
 
         img_surf = pygame.Surface((self.width, self.height))
         pygame.surfarray.blit_array(img_surf, img)
-        img_surf.blit(agent_map.surf, (0,0))
+        if show_agents:
+            img_surf.blit(agent_map.surf, (0,0))
         img_surf.blit(plant_map.surf, (0,0))
 
         scale = self.scale
