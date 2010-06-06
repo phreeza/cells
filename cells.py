@@ -75,19 +75,20 @@ class Game(object):
         self.messages = [MessageQueue() for x in mind_list]
         self.disp = Display(self.size, scale=2)
         self.time = 0
+        self.clock = pygame.time.Clock()
         self.max_time = max_time
         self.tic = time.time()
-        self.terr = ScalarMapLayer(self.size)
+        self.terr = ScalarMapLayer(self.size, val=0, valtype=numpy.int_)
         self.terr.set_random(5)
         self.minds = [m[1].AgentMind for m in mind_list]
 
         self.energy_map = ScalarMapLayer(self.size)
         self.energy_map.set_random(SCATTERED_ENERGY)
 
-        self.plant_map = ObjectMapLayer(self.size, None)
+        self.plant_map = ObjectMapLayer(self.size)
         self.plant_population = []
 
-        self.agent_map = ObjectMapLayer(self.size, None)
+        self.agent_map = ObjectMapLayer(self.size)
         self.agent_population = []
         self.winner = None
         if symmetric:
@@ -105,9 +106,12 @@ class Game(object):
             if symmetric:
                 p = Plant(my, mx, eff)
                 self.plant_population.append(p)
+        self.plant_map.lock()
         self.plant_map.insert(self.plant_population)
+        self.plant_map.unlock()
 
         # Create an agent for each mind and place on map at a different plant.
+        self.agent_map.lock()
         for idx in xrange(len(self.minds)):
             # BUG: Number of minds could exceed number of plants?
             (mx, my) = self.plant_population[idx].get_pos()
@@ -119,6 +123,7 @@ class Game(object):
             self.agent_population.append(Agent(fuzzed_x, fuzzed_y, STARTING_ENERGY, idx,
                                                self.minds[idx], None))
             self.agent_map.insert(self.agent_population)
+        self.agent_map.unlock()
 
     def run_plants(self):
         ''' Increases energy at and around (adjacent position) for each plant.
@@ -131,6 +136,7 @@ class Game(object):
                     adj_y = y + dy
                     if self.energy_map.in_range(adj_x, adj_y):
                         self.energy_map.change(adj_x, adj_y, p.get_eff())
+
 
     def add_agent(self, a):
         ''' Adds an agent to the game. '''
@@ -180,6 +186,7 @@ class Game(object):
         actions_dict = dict(actions)
         random.shuffle(actions)
 
+        self.agent_map.lock()
         # Apply the action for each agent - in doing so agent uses up 1 energy unit.
         for (agent, action) in actions:
             #This is the cost of mere survival
@@ -267,6 +274,7 @@ class Game(object):
 
         # Team wins (and game ends) if opposition team has 0 agents remaining.
         # Draw if time exceeds time limit.
+        self.agent_map.unlock()
         if not team[0]:
             print "Winner is %s (blue) in: %s" % (self.mind_list[1][1].name,
                                                   str(self.time))
@@ -281,14 +289,18 @@ class Game(object):
 
     def tick(self):
         self.disp.update(self.terr, self.agent_population,
-                         self.plant_population, self.energy_map)
+                         self.plant_population, self.agent_map,
+                         self.plant_map, self.energy_map, self.time,
+                         len(self.minds))
         self.disp.flip()
         
         # test for spacebar pressed - if yes, restart
-        for event in pygame.event.get():
-            if (event.type == pygame.locals.KEYUP and
-                event.key == pygame.locals.K_SPACE):
+        for event in pygame.event.get(pygame.locals.KEYUP):
+            if event.key == pygame.locals.K_SPACE:
                 self.winner = -1
+        if pygame.event.get(pygame.locals.QUIT):
+            sys.exit()
+        pygame.event.pump()
 
         self.run_agents()
         self.run_plants()
@@ -296,13 +308,16 @@ class Game(object):
             msg.update()
         self.time += 1
         self.tic = time.time()
+        self.clock.tick()
+        if self.time % 100 == 0:
+            print 'FPS: %f' % self.clock.get_fps()
 
 
 class MapLayer(object):
-    def __init__(self, size, val=0):
+    def __init__(self, size, val=0, valtype=numpy.object_):
         self.size = self.width, self.height = size
-        self.values = numpy.zeros(size, numpy.object_)
-        self.values[:] = val
+        self.values = numpy.empty(size, valtype)
+        self.values.fill(val)
 
     def get(self, x, y):
         if y >= 0 and x >= 0:
@@ -328,6 +343,20 @@ class ScalarMapLayer(MapLayer):
 
 
 class ObjectMapLayer(MapLayer):
+    def __init__(self, size):
+        MapLayer.__init__(self, size, None, numpy.object_)
+        self.surf = pygame.Surface(size)
+        self.surf.set_colorkey((0,0,0))
+        self.surf.fill((0,0,0))
+        self.pixels = None
+#        self.pixels = pygame.PixelArray(self.surf)
+
+    def lock(self):
+        self.pixels = pygame.surfarray.pixels2d(self.surf)
+
+    def unlock(self):
+        self.pixels = None
+
     def get_small_view_fast(self, x, y):
         ret = []
         get = self.get
@@ -367,6 +396,16 @@ class ObjectMapLayer(MapLayer):
         for o in list:
             self.set(o.x, o.y, o)
 
+    def set(self, x, y, val):
+        MapLayer.set(self, x, y, val)
+        if val is None:
+            self.pixels[x][y] = 0
+#            self.surf.set_at((x, y), 0)
+        else:
+            self.pixels[x][y] = val.color
+#            self.surf.set_at((x, y), val.color)
+
+
 # Use Cython version of get_small_view_fast if available.
 # Otherwise, don't bother folks about it.
 try:
@@ -377,6 +416,8 @@ try:
 except ImportError:
     pass
 
+TEAM_COLORS = [(255, 0, 0), (255, 255, 255), (255, 0, 255), (255, 255, 0)]
+TEAM_COLORS_FAST = [0xFF0000, 0xFFFFFF, 0xFF00FF, 0xFFFF00]
 
 class Agent(object):
     __slots__ = ['x', 'y', 'mind', 'energy', 'alive', 'team', 'loaded', 'color',
@@ -389,8 +430,7 @@ class Agent(object):
         self.alive = True
         self.team = team
         self.loaded = False
-        colors = [(255, 0, 0), (255, 255, 255), (255, 0, 255), (255, 255, 0)]
-        self.color = colors[team % len(colors)]
+        self.color = TEAM_COLORS_FAST[team % len(TEAM_COLORS_FAST)]
         self.act = self.mind.act
 
     def attack(self, other, offset = 0):
@@ -491,66 +531,75 @@ class Display(object):
         self.size = (self.width * scale, self.height * scale)
         pygame.init()
         self.screen  = pygame.display.set_mode(self.size)
-        self.surface = pygame.display.get_surface()
+        self.surface = self.screen
         pygame.display.set_caption("Cells")
 
         self.background = pygame.Surface(self.screen.get_size())
         self.background = self.background.convert()
         self.background.fill((150,150,150))
 
-    def show_text(self, text, color, topleft):
-        if pygame.font:
+        self.text = []
+
+    if pygame.font:
+        def show_text(self, text, color, topleft):
             font = pygame.font.Font(None, 24)
             text = font.render(text, 1, color)
             textpos = text.get_rect()
             textpos.topleft = topleft
-            self.surface.blit(text, textpos)
-        
-        self.screen.blit(self.surface, (0,0))
-    
-    def update(self, terr, pop, plants, energy_map):
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                sys.exit()
-        
-        limit = 150 * numpy.ones_like(terr.values)
+            self.text.append((text, textpos))
+    else:
+        def show_text(self, text, color, topleft):
+            pass
 
-        r = numpy.minimum(limit, 20 * terr.values)
-        g = numpy.minimum(limit, 10 * terr.values + 10 * energy_map.values)
-        b = numpy.zeros_like(terr.values)
+    def update(self, terr, pop, plants, agent_map, plant_map, energy_map,
+               ticks, nteams):
+        # Slower version:
+        # img = ((numpy.minimum(150, 20 * terr.values) << 16) +
+        #       ((numpy.minimum(150, 10 * terr.values + 10.energy_map.values)) << 8))
+        r = numpy.minimum(150, 20 * terr.values)
+        r <<= 16
 
-        img = numpy.dstack((r, g, b))
+#        g = numpy.minimum(150, 10 * terr.values + 10 * energy_map.values)
+        g = terr.values + energy_map.values
+        g *= 10
+        g = numpy.minimum(150, g)
+        g <<= 8
 
-        #todo: find out how many teams are playing
-        team_pop = { 0:0, 1:0, 2:0,3:0 } 
-        team_col = { 0:(False,False,False), 1:(False,False,False), 2:(False,False,False), 3:(False,False,False) }
+        img = r
+        img += g
+ #       b = numpy.zeros_like(terr.values)
 
-
-        for a in pop:
-            img[a.get_pos()] = a.color
-            team_pop[a.get_team()] += 1
-            if(not team_col[a.get_team()] == False):
-                team_col[a.get_team()] = a.color
-
-        for a in plants:
-            img[a.get_pos()] = self.green
+        img_surf = pygame.Surface((self.width, self.height))
+        pygame.surfarray.blit_array(img_surf, img)
+        img_surf.blit(agent_map.surf, (0,0))
+        img_surf.blit(plant_map.surf, (0,0))
 
         scale = self.scale
-        pygame.transform.scale(pygame.surfarray.make_surface(img),
+        pygame.transform.scale(img_surf,
                                self.size, self.screen)
-        drawTop = 0
-        for t in team_pop:
-            drawTop += 20
-            self.show_text(str(team_pop[t]), team_col[t], (10,drawTop))
+        if not ticks % 60:
+            #todo: find out how many teams are playing
+            team_pop = [0] * nteams
 
+            for team in xrange(nteams):
+                team_pop[team] = sum(1 for a in pop if a.team == team)
 
-        
+            self.text = []
+            drawTop = 0
+            for t in xrange(nteams):
+                drawTop += 20
+                self.show_text(str(team_pop[t]), TEAM_COLORS[t], (10, drawTop))
+
+        for text, textpos in self.text:
+            self.surface.blit(text, textpos)
 
     def flip(self):
         pygame.display.flip()
 
 
 class Plant(object):
+    color = 0x00FF00
+ 
     def __init__(self, x, y, eff):
         self.x = x
         self.y = y
@@ -626,5 +675,5 @@ if __name__ == "__main__":
     main()
     while True:
         game = Game(bounds, mind_list, symmetric, -1)
-        while game.winner == None:
+        while game.winner is None:
             game.tick()
