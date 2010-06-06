@@ -208,15 +208,20 @@ class Game(object):
             self.winner = -1
 
     def tick(self):
+        # Space starts new game
+        # q or close button will quit the game
+        for event in pygame.event.get():
+            if event.type == pygame.locals.KEYUP:
+                if event.key == pygame.locals.K_SPACE:
+                    self.winner = -1
+                elif event.key == pygame.locals.K_q:
+                     sys.exit()
+            elif event.type == pygame.QUIT:
+                sys.exit()
+
         self.disp.update(self.terr, self.agent_population,
                          self.plant_population, self.energy_map)
-        self.disp.flip()
-        
-        # test for spacebar pressed - if yes, restart
-        for event in pygame.event.get():
-            if (event.type == pygame.locals.KEYUP and
-                event.key == pygame.locals.K_SPACE):
-                self.winner = -1
+        self.disp.flip()        
 
         self.run_agents()
         self.run_plants()
@@ -434,10 +439,6 @@ class Display(object):
         self.screen.blit(self.surface, (0,0))
     
     def update(self, terr, pop, plants, energy_map):
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                sys.exit()
-        
         limit = 150 * numpy.ones_like(terr.values)
 
         r = numpy.minimum(limit, 20 * terr.values)
