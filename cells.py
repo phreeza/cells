@@ -8,6 +8,8 @@ import time
 import numpy
 import pygame, pygame.locals
 
+from terrain.generator import terrain_generator
+
 if not pygame.font: print 'Warning, fonts disabled'
 
 try:
@@ -26,7 +28,7 @@ def get_mind(name):
 
 
 STARTING_ENERGY = 20
-SCATTERED_ENERGY = 5 
+SCATTERED_ENERGY = 10 
 
 #Plant energy output. Remember, this should always be less
 #than ATTACK_POWER, because otherwise cells sitting on the plant edge
@@ -78,12 +80,12 @@ class Game(object):
         self.clock = pygame.time.Clock()
         self.max_time = max_time
         self.tic = time.time()
-        self.terr = ScalarMapLayer(self.size, val=0, valtype=numpy.int_)
-        self.terr.set_random(5)
+        self.terr = ScalarMapLayer(self.size)
+        self.terr.set_simple(10)
         self.minds = [m[1].AgentMind for m in mind_list]
 
         self.energy_map = ScalarMapLayer(self.size)
-        self.energy_map.set_random(SCATTERED_ENERGY)
+        self.energy_map.set_streak(SCATTERED_ENERGY)
 
         self.plant_map = ObjectMapLayer(self.size)
         self.plant_population = []
@@ -288,11 +290,21 @@ class Game(object):
             self.winner = -1
 
     def tick(self):
+        # Space starts new game
+        # q or close button will quit the game
+        for event in pygame.event.get():
+            if event.type == pygame.locals.KEYUP:
+                if event.key == pygame.locals.K_SPACE:
+                    self.winner = -1
+                elif event.key == pygame.locals.K_q:
+                     sys.exit()
+            elif event.type == pygame.QUIT:
+                sys.exit()
+
         self.disp.update(self.terr, self.agent_population,
                          self.plant_population, self.agent_map,
                          self.plant_map, self.energy_map, self.time,
                          len(self.minds))
-        self.disp.flip()
         
         # test for spacebar pressed - if yes, restart
         for event in pygame.event.get(pygame.locals.KEYUP):
@@ -301,6 +313,7 @@ class Game(object):
         if pygame.event.get(pygame.locals.QUIT):
             sys.exit()
         pygame.event.pump()
+        self.disp.flip()
 
         self.run_agents()
         self.run_plants()
@@ -336,7 +349,13 @@ class MapLayer(object):
 
 class ScalarMapLayer(MapLayer):
     def set_random(self, range):
-        self.values = numpy.random.random_integers(0, range - 1, self.size)
+        self.values = terrain_generator().create_random(self.size, range, symmetric)
+
+    def set_streak(self, range):
+        self.values = terrain_generator().create_streak(self.size, range, symmetric)
+
+    def set_simple(self, range):
+        self.values = terrain_generator().create_simple(self.size, range, symmetric)
 
     def change(self, x, y, val):
         self.values[x, y] += val
