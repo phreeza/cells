@@ -1,10 +1,4 @@
 #!/usr/bin/env python
-#TODO:
-# - Add more actions: PASS, LIFT, DROP,etc...
-# - fractal terrain generation
-# - Split into several files.
-# - limit frame rate
-# - response objects for outcome of action
 
 import ConfigParser
 import random
