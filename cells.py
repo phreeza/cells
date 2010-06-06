@@ -72,11 +72,13 @@ def get_next_move(old_x, old_y, x, y):
 
 class Game(object):
     ''' Represents a game between different minds. '''
-    def __init__(self, bounds, mind_list, symmetric, max_time):
+    def __init__(self, bounds, mind_list, symmetric, max_time, headless = False):
         self.size = self.width, self.height = (bounds, bounds)
         self.mind_list = mind_list
         self.messages = [MessageQueue() for x in mind_list]
-        self.disp = Display(self.size, scale=2)
+        self.headless = headless
+        if not self.headless:
+            self.disp = Display(self.size, scale=2)
         self.time = 0
         self.clock = pygame.time.Clock()
         self.max_time = max_time
@@ -301,34 +303,34 @@ class Game(object):
         self.agent_map.unlock()
         
     def tick(self):
-        # Space starts new game
-        # q or close button will quit the game
-        for event in pygame.event.get():
-            if event.type == pygame.locals.KEYUP:
+        if not self.headless:
+            # Space starts new game
+            # q or close button will quit the game
+            for event in pygame.event.get():
+                if event.type == pygame.locals.KEYUP:
+                    if event.key == pygame.locals.K_SPACE:
+                        self.winner = -1
+                    elif event.key == pygame.locals.K_q:
+                         sys.exit()
+                    elif event.key == pygame.locals.K_e:
+                         self.show_energy = not self.show_energy
+                    elif event.key == pygame.locals.K_a:
+                         self.show_agents = not self.show_agents
+                elif event.type == pygame.QUIT:
+                    sys.exit()
+            self.disp.update(self.terr, self.agent_population,
+                             self.plant_population, self.agent_map,
+                             self.plant_map, self.energy_map, self.time,
+                             len(self.minds), self.show_energy, self.show_agents)
+            
+            # test for spacebar pressed - if yes, restart
+            for event in pygame.event.get(pygame.locals.KEYUP):
                 if event.key == pygame.locals.K_SPACE:
                     self.winner = -1
-                elif event.key == pygame.locals.K_q:
-                     sys.exit()
-                elif event.key == pygame.locals.K_e:
-                     self.show_energy = not self.show_energy
-                elif event.key == pygame.locals.K_a:
-                     self.show_agents = not self.show_agents
-            elif event.type == pygame.QUIT:
+            if pygame.event.get(pygame.locals.QUIT):
                 sys.exit()
-
-        self.disp.update(self.terr, self.agent_population,
-                         self.plant_population, self.agent_map,
-                         self.plant_map, self.energy_map, self.time,
-                         len(self.minds), self.show_energy, self.show_agents)
-        
-        # test for spacebar pressed - if yes, restart
-        for event in pygame.event.get(pygame.locals.KEYUP):
-            if event.key == pygame.locals.K_SPACE:
-                self.winner = -1
-        if pygame.event.get(pygame.locals.QUIT):
-            sys.exit()
-        pygame.event.pump()
-        self.disp.flip()
+            pygame.event.pump()
+            self.disp.flip()
 
         self.run_agents()
         self.run_plants()
