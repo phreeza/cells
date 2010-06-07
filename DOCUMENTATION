@@ -1,0 +1,78 @@
+How to build a Mind:
+
+make your own .py file with whatever name you like.
+Import whatever modules you want to use (random, math, etc) and also
+import cells
+
+the only thing required for a mind is this:
+
+class AgentMind:
+      def act(self, view, msg):
+          return cells.Action(cells.ACT_EAT)
+
+
+
+Allowed cell actions:
+
+These actions do not require any other arguments:
+
+ cells.Action(cells.ACT_EAT)
+
+ cells.Action(cells.ACT_LIFT)
+
+ cells.Action(cells.ACT_DROP)
+
+All of these arguments have other requirements, usually a location,
+ specified by a global location.  Valid offsets are directly adjacent
+ cells to the current position so (me.x +/- 1, me.y +/- 1)
+
+ cells.Action(cells.ACT_SPAWN, (x, y), self)
+
+ cells.Action(cells.ACT_MOVE, (x, y))
+
+
+ cells.Action(cells.ACT_ATTACK, (x, y))
+
+
+ msg.send_message(something)
+ 
+ msg.get_messages(something)
+
+ msg.update
+
+Commands in Game window:
+
+Hitting spacebar resets.
+
+
+Useful properties of the view and msg arguments:
+
+ view:
+  get_me() - return the object that is the current agent
+
+  get_agents() - return a list of the agents that can be seen
+
+  get_plants() - return a list of the plants that can be seen
+
+  get_energy().get(x_pos, y_pos)
+
+ me:
+  get_pos()
+
+  get_team()
+
+  get_view()
+
+  act()
+
+  energy - integer value indicating amount of energy
+
+  loaded - boolean value indicating loaded status
+
+ plant:
+  get_pos()
+
+ agent:
+  get_pos()
+
+  get_team()
