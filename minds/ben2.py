@@ -209,6 +209,19 @@ class AgentMind:
 
     grid = self.get_available_space_grid(me, view)
 
+    bestEnergy = 2
+    bestEnergyX = -1
+    bestEnergyY = -1
+
+    for x in xrange(3):
+      for y in range(3):
+        if grid[x,y]:
+            e = view.get_energy().get(me.x + x-1, me.y + y-1)
+            if e > bestEnergy:
+                bestEnergy = e;
+                bestEnergyX = x
+                bestEnergyY = y;
+
     # Check the desired location first
     if (wx <  me.x) : bx = 0
     if (wx == me.x) : bx = 1
@@ -216,12 +229,20 @@ class AgentMind:
     if (wy <  me.y) : by = 0
     if (wy == me.y) : by = 1
     if (wy >  me.y) : by = 2
+    if bx == bestEnergyX and bestEnergy > 1:
+        return cells.Action(cells.ACT_MOVE,(me.x + bestEnergyX-1, me.y + bestEnergyY-1))
+    if by == bestEnergyY and bestEnergy > 1:
+        return cells.Action(cells.ACT_MOVE,(me.x + bestEnergyX-1, me.y + bestEnergyY-1))
+
     if grid[bx,by]:
         return cells.Action(cells.ACT_MOVE,(wx, wy))
 
+    if bestEnergy > 1:
+        return cells.Action(cells.ACT_MOVE,(me.x + bestEnergyX-1, me.y + bestEnergyY-1))
+
     if grid[2,0] and random.random() > 0.5:
         return cells.Action(cells.ACT_MOVE,(me.x + 1, me.y - 1))
-    
+
     for x in xrange(3):
       for y in range(3):
         if grid[x,y]:
