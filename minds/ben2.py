@@ -121,7 +121,7 @@ class AgentMind:
             return cells.Action(cells.ACT_SPAWN, (me.x + spawn_x, me.y + spawn_y, self))
         if (currentEnergy > 3) :
             return cells.Action(cells.ACT_EAT)
- 
+
     # Make sure we wont die
     if (me.energy < 25 and currentEnergy > 1) :
         return cells.Action(cells.ACT_EAT)
@@ -163,10 +163,11 @@ class AgentMind:
             if (self.x == 0 and self.y == 0) :
                 self.x = random.randrange(-2, 2)
                 self.y = random.randrange(-2, 2)
-            self.step = random.randrange(1, min(30, (best+2)/2))
+
+            self.step = random.randrange(1, min(30, max(2,int((best+2)/2))))
             self.rescue = True
 
-    if not self.rescue and me.energy > 50 and me.energy < 100:
+    if not self.rescue and me.energy > cells.SPAWN_MIN_ENERGY and me.energy < 100:
         spawn_x, spawn_y = self.smart_spawn(me, view)
         return cells.Action(cells.ACT_SPAWN,(me.x + spawn_x, me.y + spawn_y, self))
 
@@ -196,7 +197,7 @@ class AgentMind:
     if self.bumps >= 2:
         self.choose_new_direction(view, msg)
     self.last_pos = view.me.get_pos()
-    
+
     offsetx = 0
     offsety = 0
     if self.search:
@@ -208,6 +209,19 @@ class AgentMind:
 
     grid = self.get_available_space_grid(me, view)
 
+    bestEnergy = 2
+    bestEnergyX = -1
+    bestEnergyY = -1
+
+    for x in xrange(3):
+      for y in range(3):
+        if grid[x,y]:
+            e = view.get_energy().get(me.x + x-1, me.y + y-1)
+            if e > bestEnergy:
+                bestEnergy = e;
+                bestEnergyX = x
+                bestEnergyY = y;
+
     # Check the desired location first
     if (wx <  me.x) : bx = 0
     if (wx == me.x) : bx = 1
@@ -215,12 +229,20 @@ class AgentMind:
     if (wy <  me.y) : by = 0
     if (wy == me.y) : by = 1
     if (wy >  me.y) : by = 2
+    if bx == bestEnergyX and bestEnergy > 1:
+        return cells.Action(cells.ACT_MOVE,(me.x + bestEnergyX-1, me.y + bestEnergyY-1))
+    if by == bestEnergyY and bestEnergy > 1:
+        return cells.Action(cells.ACT_MOVE,(me.x + bestEnergyX-1, me.y + bestEnergyY-1))
+
     if grid[bx,by]:
         return cells.Action(cells.ACT_MOVE,(wx, wy))
 
+    if bestEnergy > 1:
+        return cells.Action(cells.ACT_MOVE,(me.x + bestEnergyX-1, me.y + bestEnergyY-1))
+
     if grid[2,0] and random.random() > 0.5:
         return cells.Action(cells.ACT_MOVE,(me.x + 1, me.y - 1))
-    
+
     for x in xrange(3):
       for y in range(3):
         if grid[x,y]:
@@ -290,7 +312,7 @@ class AgentMind:
     if self.check( 1, -1, view):  xoffset = 1;  yoffset = -1;  # diag left
     if self.check( 1, 1, view):   xoffset = 1;  yoffset = 1;  # diag right
     if xoffset != -2:
-        if me.energy < 50 : return cells.Action(cells.ACT_EAT)
+        if me.energy < cells.SPAWN_MIN_ENERGY : return cells.Action(cells.ACT_EAT)
         # When we are populating plant cells we must spawn some children in case we are being attacked
         # When we are all alone we don't spawn any cheap children and only do high quality cells
         self.children += 1
@@ -299,12 +321,12 @@ class AgentMind:
     # When there are more then two plants always charge up and then leave
     # when there are less then two plants only half of the cells should charge up and then leave
     if self.children <= 0:
-        if me.energy > 50 + self.time + random.randrange(-10,100):
+        if me.energy >= cells.ENERGY_CAP or me.energy > cells.SPAWN_MIN_ENERGY + self.time + random.randrange(-10,100):
             self.type = Type.SCOUT
             return self.act_scout(view, msg)
         return cells.Action(cells.ACT_EAT)
 
-    if me.energy < 50 :
+    if me.energy < cells.SPAWN_MIN_ENERGY :
         return cells.Action(cells.ACT_EAT)
     self.children -= 1
     spawn_x, spawn_y = self.smart_spawn(me, view)
