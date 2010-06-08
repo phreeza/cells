@@ -48,14 +48,14 @@ ENERGY_CAP   = 2500
 
 #SPAWN_COST is the energy it takes to seperate two cells from each other.
 #It is lost forever, not to be confused with the BODY_ENERGY of the new cell.
-SPAWN_COST      = 20
-SUSTAIN_COST    = 0
-MOVE_COST       = 1    
+SPAWN_LOST_ENERGY = 20
+SUSTAIN_COST      = 0
+MOVE_COST         = 1    
 #MESSAGE_COST    = 0    
 
 #BODY_ENERGY + SPAWN_COST is invested to create a new cell. What remains is split evenly.
 #With this model we only need to make sure a cell can't commit suicide by spawning.
-SPAWN_MIN_ENERGY = BODY_ENERGY + SPAWN_COST
+SPAWN_TOTAL_ENERGY = BODY_ENERGY + SPAWN_LOST_ENERGY
 
 TIMEOUT = None
 
@@ -215,8 +215,8 @@ class Game(object):
                                                act_x, act_y)
                 if (self.agent_map.in_range(new_x, new_y) and
                     not self.agent_map.get(new_x, new_y) and
-                    agent.energy >= SPAWN_MIN_ENERGY):
-                    agent.energy -= SPAWN_MIN_ENERGY
+                    agent.energy >= SPAWN_TOTAL_ENERGY):
+                    agent.energy -= SPAWN_TOTAL_ENERGY
                     agent.energy /= 2
                     a = Agent(new_x, new_y, agent.energy, agent.get_team(),
                               self.minds[agent.get_team()],
