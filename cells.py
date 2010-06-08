@@ -252,14 +252,15 @@ class Game(object):
                             - self.terr.get(act_x, act_y))
                 if (victim is not None and victim.alive and
                     next_pos == act_data):
-                    agent.attack(victim, terr_delta)
                     #If both agents attack each other, both loose double energy
                     #Think twice before attacking 
                     try:
-                        if actions_dict[victim].type == ACT_ATTACK:
-                            victim.attack(agent, -terr_delta)
+                        contested = (actions_dict[victim].type == ACT_ATTACK)
                     except:
-                        pass
+                        contested = False
+                    agent.attack(victim, terr_delta, contested)
+                    if contested:
+                        victim.attack(agent, -terr_delta, True)
                      
             elif action.type == ACT_LIFT:
                 if not agent.loaded and self.terr.get(agent.x, agent.y) > 0:
@@ -473,10 +474,14 @@ class Agent(object):
         self.color = TEAM_COLORS_FAST[team % len(TEAM_COLORS_FAST)]
         self.act = self.mind.act
 
-    def attack(self, other, offset = 0):
+    def attack(self, other, offset = 0, contested = False):
         if not other:
             return False
-        other.energy -= ATTACK_POWER + ATTACK_TERR_CHANGE * offset
+        max_power = ATTACK_POWER + ATTACK_TERR_CHANGE * offset
+        if contested:
+            other.energy -= min(self.energy, max_power)
+        else:
+            other.energy -= max_power
         return other.energy <= 0
 
     def get_team(self):
