@@ -1,0 +1,121 @@
+How to change what minds are fighting:
+
+After running python cells.py for the first time, a file named
+default.cfg will be created in the same directory, open this with your
+favorite text editor, and change the part that reads:
+
+[minds]
+minds = mind1,mind2
+
+to whatever mind names you want to have fight.  Note that the mind
+names don't include the .py extension, and that the .py files should
+be located in the ./minds directory
+
+You can have from 2 to 4 minds specified, all comma-delimited
+
+How to build a Mind:
+
+make your own .py file with whatever name you like.
+Import whatever modules you want to use (random, math, etc) 
+and also import cells
+
+the only thing absolutely required for a mind that doesn't instantly
+lose is this:
+
+class AgentMind:
+      def act(self, view, msg):
+          return cells.Action(cells.ACT_EAT)
+
+
+Minds can have other class methods to assist in writing the act
+method, but remember, when calling another method to determine what
+action to take, you must have a chain of return statements leading all
+the way back to the AgentMind.act method.
+
+If you don't you'll get a an error that looks like this:
+
+Traceback (most recent call last):
+  File "cells.py", line 570, in <module>
+    game.tick()
+  File "cells.py", line 242, in tick
+    self.run_agents()
+  File "cells.py", line 158, in run_agents
+    if action.type == ACT_MOVE: # Changes position of agent.
+AttributeError: 'NoneType' object has no attribute 'type'
+
+This is because your act method failed to explicitly return something,
+and so python helpfully passed a None instead.
+
+
+
+
+Allowed cell actions:
+
+These actions do not require any other arguments:
+
+ cells.Action(cells.ACT_EAT)
+
+ cells.Action(cells.ACT_LIFT)
+
+ cells.Action(cells.ACT_DROP)
+
+All of these arguments have other requirements, usually a location,
+ specified by a global location.  Valid offsets are directly adjacent
+ cells to the current position so (me.x +/- 1, me.y +/- 1)
+
+ cells.Action(cells.ACT_SPAWN, (x, y), self)
+
+ cells.Action(cells.ACT_MOVE, (x, y))
+
+
+ cells.Action(cells.ACT_ATTACK, (x, y))
+
+
+ msg.send_message(something)
+ 
+ msg.get_messages(something)
+
+Commands in Game window:
+
+spacebar starts a new game.
+q quits the game.
+e toggles energy display.
+a toggles agent display.
+
+Useful properties of the view and msg arguments:
+
+ view:
+  get_me() - return the object that is the current agent (see 'me' below)
+
+  get_agents() - return a list of the agents that can be seen 
+                 (see 'agent' below)
+
+  get_plants() - return a list of the plants that can be seen
+                 (see 'plant' below)
+
+  get_energy().get(x_pos, y_pos) - return the amount of energy at coordinates
+
+ me:
+  get_pos()
+
+  get_team()
+
+  get_view()
+
+  act()
+
+  energy - integer value indicating amount of energy
+
+  loaded - boolean value indicating loaded status
+
+
+ plant:
+  get_pos()
+
+  get_eff() - get the efficiency factor of the plant
+
+
+ agent:
+  get_pos()
+
+  get_team()
