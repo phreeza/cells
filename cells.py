@@ -187,8 +187,9 @@ class Game(object):
             world_view = WV(a, agent_view, plant_view, terr_map, energy_map)
             views_append((a, world_view))
 
-        # Create a list containing the action for each agent, where each agent determines its actions based
-        # on its view of the world and messages from its team.
+        # Create a list containing the action for each agent, where each agent
+        # determines its actions based on its view of the world and messages 
+        # from its team.
         messages = self.messages
         actions = [(a, a.act(v, messages[a.team])) for (a, v) in views]
         actions_dict = dict(actions)
@@ -204,7 +205,8 @@ class Game(object):
                 act_x, act_y = action.get_data()
                 (new_x, new_y) = get_next_move(agent.x, agent.y,
                                                act_x, act_y)
-                # Move to the new position if it is in range and it's not currently occupied by another agent.
+                # Move to the new position if it is in range and it's not 
+                #currently occupied by another agent.
                 if (self.agent_map.in_range(new_x, new_y) and
                     not self.agent_map.get(new_x, new_y)):
                     self.move_agent(agent, new_x, new_y)
@@ -294,7 +296,8 @@ class Game(object):
         
         if alive == 1:
             colors = ["red", "white", "purple", "yellow"]
-            print "Winner is %s (%s) in %s" % (self.mind_list[winner][1].name, colors[winner], str(self.time))
+            print "Winner is %s (%s) in %s" % (self.mind_list[winner][1].name, 
+                                                colors[winner], str(self.time))
             self.winner = winner
         
         if alive == 0 or (self.max_time > 0 and self.time > self.max_time):
@@ -322,7 +325,8 @@ class Game(object):
             self.disp.update(self.terr, self.agent_population,
                              self.plant_population, self.agent_map,
                              self.plant_map, self.energy_map, self.time,
-                             len(self.minds), self.show_energy, self.show_agents)
+                             len(self.minds), self.show_energy,
+                             self.show_agents)
             
             # test for spacebar pressed - if yes, restart
             for event in pygame.event.get(pygame.locals.KEYUP):
@@ -367,16 +371,20 @@ class MapLayer(object):
 
 class ScalarMapLayer(MapLayer):
     def set_random(self, range, symmetric = True):
-        self.values = terrain_generator().create_random(self.size, range, symmetric)
+        self.values = terrain_generator().create_random(self.size, range, 
+                                                        symmetric)
 
     def set_streak(self, range, symmetric = True):
-        self.values = terrain_generator().create_streak(self.size, range, symmetric)
+        self.values = terrain_generator().create_streak(self.size, range,
+                                                        symmetric)
 
     def set_simple(self, range, symmetric = True):
-        self.values = terrain_generator().create_simple(self.size, range, symmetric)
+        self.values = terrain_generator().create_simple(self.size, range,
+                                                        symmetric)
     
     def set_perlin(self, range, symmetric = True):
-        self.values = terrain_generator().create_perlin(self.size, range, symmetric)
+        self.values = terrain_generator().create_perlin(self.size, range,
+                                                        symmetric)
 
 
     def change(self, x, y, val):
