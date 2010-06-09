@@ -320,6 +320,10 @@ class Game(object):
                          self.show_energy = not self.show_energy
                     elif event.key == pygame.locals.K_a:
                          self.show_agents = not self.show_agents
+                elif event.type == pygame.locals.MOUSEBUTTONUP:
+                    if event.button == 1:
+                        print self.agent_map.get(event.pos[0]/2,
+                                                 event.pos[1]/2)
                 elif event.type == pygame.QUIT:
                     sys.exit()
             self.disp.update(self.terr, self.agent_population,
@@ -481,7 +485,8 @@ class Agent(object):
         self.loaded = False
         self.color = TEAM_COLORS_FAST[team % len(TEAM_COLORS_FAST)]
         self.act = self.mind.act
-
+    def __str__(self):
+        return "Agent from team %i, energy %i" % (self.team,self.energy)
     def attack(self, other, offset = 0, contested = False):
         if not other:
             return False
@@ -578,7 +583,7 @@ class Display(object):
     green = (0, 255, 0)
     yellow = (255, 255, 0)
 
-    def __init__(self, size, scale=5):
+    def __init__(self, size, scale=2):
         self.width, self.height = size
         self.scale = scale
         self.size = (self.width * scale, self.height * scale)
