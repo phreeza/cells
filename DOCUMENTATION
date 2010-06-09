@@ -77,8 +77,10 @@ All of these arguments have other requirements, usually a location,
 
 Commands in Game window:
 
-Hitting spacebar resets.
-
+spacebar starts a new game.
+q quits the game.
+e toggles energy display.
+a toggles agent display.
 
 Useful properties of the view and msg arguments:
 
